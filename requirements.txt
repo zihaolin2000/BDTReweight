@@ -1,0 +1,7 @@
+python3.11
+hep_ml
+numpy
+pandas
+matplotlib
+uproot
+awkward
