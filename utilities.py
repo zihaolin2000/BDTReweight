@@ -7,7 +7,7 @@ PARTICLE_PDG = {
     'electron':11,
     'numu':14,
     'nue':12,
-    'gamma':22,
+    'photon':22,
     'pi+':211,
     'pi-':-211,
     'pi0':111
@@ -20,7 +20,7 @@ PARTICLE_MASS = {
     'electron':0.00511,
     'numu':0.0,
     'nue':0.0,
-    'gamma':0.0,
+    'photon':0.0,
     'pi+':0.13957,
     'pi-':0.13957,
     'pi0':0.13498
