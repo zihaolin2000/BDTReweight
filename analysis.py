@@ -7,7 +7,7 @@ from .nuisance_flat_tree import NuisanceFlatTree
 def transform_momentum_to_reaction_frame(df : pd.DataFrame, selector_lepton : str = 'leading_muon', particle_names : list = []) -> pd.DataFrame:
     """
     Convert particle momentum from lab frame to reaction frame.
-    In lab frame, neutrino direction is +z. Reaction frame is
+    In both frames, neutrino direction is +z. Reaction frame is
     defined by rotating lab frame about z-axis, such that the
     coplane of neutrino and lepton directions form the yz plane.
     Lepton transverse direction is chosen as -y direction.
