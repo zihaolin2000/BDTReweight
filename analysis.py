@@ -1,5 +1,6 @@
 import pandas as pd
 import numpy as np
+from numpy.typing import ArrayLike
 import awkward as ak
 from .utilities import normalize_vectors
 from .nuisance_flat_tree import NuisanceFlatTree
@@ -59,7 +60,7 @@ def transform_momentum_to_reaction_frame(df : pd.DataFrame, selector_lepton : st
     
     return df_new
 
-def create_dataframe_from_nuisance(tree : NuisanceFlatTree, variable_exprs : list = [], mask : np.ndarray = None) -> pd.DataFrame:
+def create_dataframe_from_nuisance(tree : NuisanceFlatTree, variable_exprs : list = [], mask : ArrayLike = None) -> pd.DataFrame:
     """
     Create a dataframe from NuisanceFlatTree with list of 
     variable expressions specified for event-level quantity.
@@ -89,3 +90,32 @@ def create_dataframe_from_nuisance(tree : NuisanceFlatTree, variable_exprs : lis
         df[expr] = np_variable
     
     return df
+
+def calculate_weighted_diff_histogram_and_stat_errors(var : ArrayLike, weights : ArrayLike, scale_factor : float, bins : ArrayLike) -> ArrayLike:
+    """
+    Calculate the weighted differential counts with respect to 
+    variable var, dcounts / dvar, and statistical errors,
+    for given bins, weights, and scale factor.
+    When var is array of particle physical quantity x, and
+    scale_factor is 'fScaleFactor' from NUISANCE flat tree, this
+    function returns differential cross section dsigma / dx.
+
+    Parameters
+    ----------
+    var : ArrayLike
+        Variables to be counted to make differential histograms. 
+
+    bins : 1d np.ndarray
+        Particle name.
+
+    Returns
+    ----------
+    int
+    """
+
+    bin_widths = np.diff(bins)
+    counts, _ = np.histogram(var, bins=bins, weights=weights)
+    diff_xsec = scale_factor * counts / bin_widths
+    sum_w2, _ = np.histogram(var, bins=bins, weights=weights**2)
+    errors = np.sqrt(sum_w2) * scale_factor / bin_widths
+    return diff_xsec, errors

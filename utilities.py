@@ -1,4 +1,5 @@
 import numpy as np
+from numpy.typing import ArrayLike
 
 PARTICLE_PDG = {
     'proton':2212,
@@ -56,10 +57,10 @@ def particle_mass_lookup(particle : str) -> float:
     """
     return PARTICLE_MASS[particle]
 
-def angle_between_vectors(v1s : np.ndarray, v2s : np.ndarray) -> np.ndarray:
+def angle_between_vectors(v1s : np.ndarray, v2s : np.ndarray) -> ArrayLike:
     pass
 
-def TKI_variables(lepton_Ps : np.ndarray, p_nucleon_Ps : np.ndarray) -> tuple:
+def TKI_variables(lepton_Ps : np.ndarray, p_nucleon_Ps : np.ndarray) -> ArrayLike:
     pass
 
 def normalize_vectors(vectors : np.ndarray) -> np.ndarray:
@@ -77,7 +78,7 @@ def normalize_vectors(vectors : np.ndarray) -> np.ndarray:
     """
     return vectors / (np.linalg.norm(vectors, axis=1)[:,None])
 
-def scalar_component_vectors(v1s : np.ndarray, v2s : np.ndarray) -> np.ndarray:
+def scalar_component_vectors(v1s : np.ndarray, v2s : np.ndarray) -> ArrayLike:
     """
     Treat entry v1,v2 in v1s,v2s as physical vector pairs, and
     calculate scalar projection of v1 onto v2 for pair.
