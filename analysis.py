@@ -2,6 +2,8 @@ import pandas as pd
 import numpy as np
 from numpy.typing import ArrayLike
 import awkward as ak
+import matplotlib.pyplot as plt
+from matplotlib.gridspec import GridSpec, GridSpecFromSubplotSpec
 from .utilities import normalize_vectors
 from .nuisance_flat_tree import NuisanceFlatTree
 
@@ -91,7 +93,7 @@ def create_dataframe_from_nuisance(tree : NuisanceFlatTree, variable_exprs : lis
     
     return df
 
-def calculate_weighted_diff_histogram_and_stat_errors(var : ArrayLike, weights : ArrayLike, scale_factor : float, bins : ArrayLike) -> ArrayLike:
+def calculate_weighted_diff_histogram_and_stat_errors(var : ArrayLike, weights : ArrayLike, scale_factor : float, bins : ArrayLike) -> tuple:
     """
     Calculate the weighted differential counts with respect to 
     variable var, dcounts / dvar, and statistical errors,
@@ -105,17 +107,151 @@ def calculate_weighted_diff_histogram_and_stat_errors(var : ArrayLike, weights :
     var : ArrayLike
         Variables to be counted to make differential histograms. 
 
-    bins : 1d np.ndarray
-        Particle name.
+    weights : ArrayLike
+        Weight for each event.
+
+    scale_factor : float
+        A factor to scale up or down the histogram and error bars.
+
+    bins : ArrayLike
+        Bin edges for histogram.
 
     Returns
     ----------
-    int
+    tuple
+        Pair of differential histogram and error bars.
     """
-
     bin_widths = np.diff(bins)
     counts, _ = np.histogram(var, bins=bins, weights=weights)
-    diff_xsec = scale_factor * counts / bin_widths
+    diff_counts = scale_factor * counts / bin_widths
     sum_w2, _ = np.histogram(var, bins=bins, weights=weights**2)
     errors = np.sqrt(sum_w2) * scale_factor / bin_widths
-    return diff_xsec, errors
+    return diff_counts, errors
+
+def draw_source_target_distributions_and_ratio(source : pd.DataFrame, target : pd.DataFrame, variables : list = [],
+        source_weights : ArrayLike = None, new_source_weights : ArrayLike = None,  target_weights : ArrayLike = None,
+        scale_source : float = 1.0, scale_target : float = 1.0) -> None:
+    """
+    Draw distributions of variables of source, source reweighted, and
+    target sample in grids of subplots. 
+
+    Parameters
+    ----------
+    source : pd.DataFrame
+        The dataframe containing physical quantities of source sample.
+    target : pd.DataFrame
+        The dataframe containing physical quantities of source sample.
+    variables : list
+        List of physical quantities to be plotted, such as
+        'leading_proton_px', 'subleading_proton_KE', 'weight', etc.
+    source_weights : ArrayLike
+        Array of old weights for source sample events.
+    new_source_weights : ArrayLike
+        Array of new weights for source sample events.
+    target_weights : ArrayLike
+        Array of weights for target sample events.
+    scale_source : float, optional
+        Scale factor for source sample.
+    scale_target : float, optional
+        Scale factor for target sample.
+
+    Returns
+    ----------
+    None
+    """
+
+    # create grids of subplots
+    n_plots = len(variables)
+    figheight = int((n_plots - 1) / 3 + 1)
+    fig = plt.figure(figsize=[15, 3 * figheight], dpi=200)
+    alpha= 0.5
+    outer_grid = GridSpec(figheight, 3, figure=fig, wspace=0.25, hspace=0.3)
+    
+    # loop through variables and plot
+    for idx, variable in enumerate(variables):
+        row, col = divmod(idx, 3)
+
+        if variable != 'weight':
+            # plot histogram and ratio of source / target
+            inner_grid = GridSpecFromSubplotSpec(2, 1, subplot_spec=outer_grid[row, col], height_ratios=[3, 1], hspace=0.0)
+            ax_main = fig.add_subplot(inner_grid[0])
+            ax_ratio = fig.add_subplot(inner_grid[1], sharex=ax_main)
+        else:
+            # plot log scale histogram for source sample new weights; don't plot ratio
+            inner_grid = GridSpecFromSubplotSpec(1, 1, subplot_spec=outer_grid[row, col])
+            ax_main = fig.add_subplot(inner_grid[0])
+            ax_ratio = None
+
+
+        if variable == 'weight':
+            # plot source sample new weights
+            ax_main.hist(new_source_weights*len(new_source_weights)/np.sum(new_source_weights), log=True, bins=30, alpha=alpha, color='goldenrod')
+            ax_main.set_xlim(0, None)
+            ax_main.set_xlabel('source sample new weights')
+            ax_main.set_ylabel('counts (log scale)')
+            continue
+
+        # drop edgy values for a better plotting for majority of data
+        x_min = min(np.quantile(source[variable], 0.005),np.quantile(target[variable], 0.005))
+        x_max = min(np.quantile(source[variable], 0.995),np.quantile(target[variable], 0.995))
+
+        # plot histogram with evenly bins of size 30
+        bins = np.linspace(x_min, x_max, 30)
+        bin_widths = np.diff(bins)
+        bin_centers = 0.5 * (bins[1:] + bins[:-1])
+
+        # a helper function to plot, also returns differential counts and statistical errors
+        def hist_plot(data, weights, scale, color, label='', offset=0, ax=ax_main):
+            diff_counts, errors = calculate_weighted_diff_histogram_and_stat_errors(data, weights=weights, scale_factor=scale, bins=bins)
+            ax.step(bins, np.append(diff_counts, diff_counts[-1]), where='post', label=label, color=color, alpha=alpha)
+            ax.errorbar(bin_centers + offset * bin_widths, diff_counts, yerr=errors,
+                        fmt=".", color=color, capsize=1.5, markersize=2, alpha=alpha)
+            return diff_counts, errors
+
+        # plot source before reweight
+        h1, e1 = hist_plot(source[variable], source_weights, scale_source, 'green', label='source', offset=-0.3)
+        # plot source after reweight
+        h2, e2 = hist_plot(source[variable], new_source_weights, scale_source, 'blue', label='source rwt', offset=0.3)
+        # plot target
+        h3, e3 = hist_plot(target[variable], target_weights, scale_target, 'red', label='target', offset=0)
+
+
+        ax_main.set_ylabel('diff counts')            
+        ax_main.set_xlim(bins[0], bins[-1])
+        ax_main.set_ylim(0, None)
+        ax_main.tick_params(which='both', direction='in', top=True, right=True)
+        ax_main.minorticks_on()
+        ax_main.ticklabel_format(style='sci', axis='y', scilimits=(0,0))
+        ax_main.legend(frameon=False)
+
+
+        # ratio plot of source / target
+        if variable != 'weight' and ax_ratio:
+            with np.errstate(divide='ignore', invalid='ignore'):
+                ratio = np.true_divide(h1, h3)
+                error_ratio = ratio * np.sqrt((e1 / h1)**2 + (e3 / h3)**2)
+                # avoid divide by zeros
+                valid = (h1 > 0) & (h3 > 0) & np.isfinite(ratio) & np.isfinite(error_ratio) & (error_ratio >= 0)
+            ax_ratio.errorbar(bin_centers[valid], ratio[valid], yerr=error_ratio[valid],
+                              fmt='.', color='orange', markersize=3,capsize=2,alpha=alpha)
+            with np.errstate(divide='ignore', invalid='ignore'):
+                ratio = np.true_divide(h2, h3)
+                error_ratio = ratio * np.sqrt((e2 / h2)**2 + (e3 / h3)**2)
+                # Mask valid entries only
+                valid = (h2 > 0) & (h3 > 0) & np.isfinite(ratio) & np.isfinite(error_ratio) & (error_ratio >= 0)
+
+            ax_ratio.errorbar(bin_centers[valid], ratio[valid], yerr=error_ratio[valid], fmt='.', color='purple', markersize=3,capsize=2,alpha=alpha)
+
+            ax_ratio.axhline(1, color='gray', linestyle='-',alpha=alpha)
+            ax_ratio.set_ylabel('ratio', fontsize=8)
+            ax_ratio.set_yticks([0,1,2])
+
+            ax_ratio.set_ylim(0,2)
+            ax_ratio.yaxis.tick_right()
+            ax_ratio.yaxis.set_label_position("right")
+            
+            ax_ratio.set_xlabel(variable)
+
+    fig.subplots_adjust(bottom=0.1)
+    plt.show()
+
