@@ -55,9 +55,9 @@ class NuisanceFlatTree:
             self._flattree_vars['fScaleFactor'] = total_xsec / len(self._flattree_vars)
             self._total_xsec = total_xsec
 
-    def get_tree_array(self) -> ak.highlevel.Array:
+    def get_tree_array_copy(self) -> ak.highlevel.Array:
         """
-        Get the NUISANCE flat tree awkward array.
+        Get a copy of NUISANCE flat tree awkward array.
 
         Parameters
         ----------
@@ -68,7 +68,37 @@ class NuisanceFlatTree:
         ak.Array
             awkward array of flat tree.
         """
-        return self._flattree_vars
+        return ak.copy(self._flattree_vars)
+
+    def get_total_xsec(self) -> float:
+        """
+        Get total cross-section of flat tree events.
+
+        Parameters
+        ----------
+        None
+
+        Returns
+        ----------
+        float
+        """
+        return self._total_xsec
+    
+    def get_conversion_factor_eventrate_to_xsec(self):
+        """
+        Get the conversion factor converting event rate to cross-section.
+        In NUISANCE, fScaleFactor is the same for all events in
+        flat tree.
+
+        Parameters
+        ----------
+        None
+
+        Returns
+        ----------
+        float
+        """
+        return self._flattree_vars['fScaleFactor'][0]
 
     def get_mask_CCQELike(self) -> np.ndarray:
         """
