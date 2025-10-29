@@ -116,8 +116,25 @@ class NuisanceFlatTree:
         """
         return np.array(self._flattree_vars['flagCCQELike'])
 
-    def get_mask_target_atomic_number(self, A : int) -> ArrayLike:
-        pass
+    def get_mask_target_nucleus_A_Z(self, A : int, Z : int) -> ArrayLike:
+        """
+        Get the boolean mask for events where target nuclei has
+        specified atomic number A and Z. 
+
+        Parameters
+        ----------
+        A : int
+            Mass number.
+        Z : int
+            Atomic number.
+
+        Returns
+        ----------
+        ArrayLike
+        """
+        is_A = self._flattree_vars['tgta'] == A
+        is_Z = self._flattree_vars['tgtz'] == Z
+        return np.logical_and(is_A, is_Z)
 
     def get_mask_topology(self, particle_counts : dict = {}, KE_thresholds : dict = {}) -> ArrayLike:
         """
