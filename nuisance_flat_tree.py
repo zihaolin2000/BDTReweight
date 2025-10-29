@@ -12,8 +12,9 @@ class NuisanceFlatTree:
     ----------
     _flattree_vars : ak.Array
         Tree 'FlatTree_VARS' from NUISANCE flat tree root file that
-        stores event
-        quantities, such as 'Mode', 'pdg', 'px', etc.
+        stores event quantities, such as 'Mode', 'pdg', 'px', etc.
+    _total_xsec : float
+        Total cross-section in unit of cm^2.
     """
 
     def __init__(self, rf_path : str | list, **kwargs):
@@ -35,12 +36,24 @@ class NuisanceFlatTree:
         """
         if type(rf_path) is str:
             self._flattree_vars = uproot.open(rf_path)['FlatTree_VARS'].arrays(library='ak', **kwargs)
+            self._total_xsec = np.sum(self._flattree_vars['fScaleFactor'])
         else:
             trees = []
+            # Assuming all samples are generated from the same
+            # generator with same preset, and total cross-section
+            # in each file is the same. Need to re-evaluate
+            # fScaleFactor to preserve total cross-section.
+            total_xsec = 0.0
             for path in rf_path:
                 tree = uproot.open(path)['FlatTree_VARS'].arrays(library='ak', **kwargs)
+                if len(trees) == 0:
+                    total_xsec = np.sum(tree['fScaleFactor'])
                 trees.append(tree)
+            # Concatenate all arrays
             self._flattree_vars = ak.concatenate(trees)
+            # Re-evaluate fScaleFactor
+            self._flattree_vars['fScaleFactor'] = total_xsec / len(self._flattree_vars)
+            self._total_xsec = total_xsec
 
     def get_tree_array(self) -> ak.highlevel.Array:
         """
@@ -70,7 +83,6 @@ class NuisanceFlatTree:
         np.ndarray
             Boolean mask for CCQE-like.
         """
-
         return np.array(self._flattree_vars['flagCCQELike'])
     
     def get_mask_topology(self, particle_counts : dict = {}, KE_thresholds : dict = {}) -> np.ndarray:
@@ -172,7 +184,8 @@ class NuisanceFlatTree:
             # no KE_threshold applied. Count particles directly.
             num_particles = ak.sum(is_particle, axis = 1)
         else:
-            # sum the number of particles that has KE above KE_threshold
+            # sum the number of particles that has KE above
+            # KE_threshold
             particle_KE = self._flattree_vars[mask]['E'][is_particle] - particle_mass_lookup(particle)
             above_KE_threshold = particle_KE  >=  KE_threshold
             num_particles = ak.sum(above_KE_threshold, axis = 1)
@@ -255,15 +268,18 @@ class NuisanceFlatTree:
                     leading_idx = ak.argmax(self._flattree_vars[mask]['E'][is_particle], axis=1, keepdims=True)
                     selected = ak.firsts(self._flattree_vars[mask][variable][is_particle][leading_idx])
             elif selector == 'subleading':
-                # sort the particle energy in descending order (0: highest, 1: second highest...)
+                # sort the particle energy in descending order
+                # (0: highest, 1: second highest...)
                 order = ak.argsort(self._flattree_vars[mask]['E'][is_particle], axis=1, ascending=False)
-                # use ak.pad_none to fill None when there's no 2nd particle
+                # use ak.pad_none to fill None when there's no 2nd
+                # particle
                 if variable == 'KE':
                     selected = ak.pad_none(self._flattree_vars[mask]['E'][is_particle][order],2)[:,1] - particle_mass_lookup(particle)
                 else:
                     selected = ak.pad_none(self._flattree_vars[mask][variable][is_particle][order],2)[:,1]
             else: # selector == 'leading'
-                # when final state has no requested particle, the sum is set to None
+                # when final state has no requested particle, the sum
+                # is set to None
                 if variable == 'KE':
                     # subtract mass * no. of particle from total E
                     selected = ak.sum(self._flattree_vars[mask]['E'][is_particle], axis=1, mask_identity=True) - particle_mass_lookup(particle)*ak.sum(is_particle, axis=1)
