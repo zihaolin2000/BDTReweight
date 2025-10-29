@@ -182,7 +182,7 @@ class NuisanceFlatTree:
             final_mask = final_mask & count_mask
         return final_mask
 
-    def update_tree_with_mask(self, mask : np.ndarray) -> None:
+    def update_tree_with_mask(self, mask : ArrayLike) -> None:
         """
         Update tree content by filtering out masked events.
         This will discard unmasked entries.
@@ -198,7 +198,7 @@ class NuisanceFlatTree:
         """
         self._flattree_vars = self._flattree_vars[mask]
 
-    def get_n_particles(self, particle : str, KE_threshold : float = 0.0, mask : np.ndarray = None) -> ak.highlevel.Array:
+    def get_n_particles(self, particle : str, KE_threshold : float = 0.0, mask : ArrayLike = None) -> ak.highlevel.Array:
         """
         Count the number of particles of quest from each event.
 
@@ -242,7 +242,7 @@ class NuisanceFlatTree:
 
         return num_particles
     
-    def get_event_variable(self, expr : str, mask : np.ndarray = None) -> ak.highlevel.Array:
+    def get_event_variable(self, expr : str, mask : ArrayLike = None) -> ak.highlevel.Array:
         """
         Get the event-level quantity from NUISANCe flat tree 
         (self._flattree_vars).
