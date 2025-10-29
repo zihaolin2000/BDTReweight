@@ -16,22 +16,31 @@ class NuisanceFlatTree:
         quantities, such as 'Mode', 'pdg', 'px', etc.
     """
 
-    def __init__(self, rf_path : str, **kwargs):
+    def __init__(self, rf_path : str | list, **kwargs):
         """
         Initialize the NuisanceFlatTree object with given arguments.
 
         Parameters
         ----------
-        rf_path : str
-            NUISANCE flat tree root file path.
+        rf_path : str | list
+            NUISANCE flat tree root file path, or list of paths
+            (str).
         **kwargs : dict, optional
-            kwargs for uproot.TTree.arrays() for additional filtering.
+            kwargs for uproot.TTree.arrays() for additional
+            filtering.
         
         Returns
         ----------
         None
         """
-        self._flattree_vars = uproot.open(rf_path)['FlatTree_VARS'].arrays(library='ak', **kwargs)
+        if type(rf_path) is str:
+            self._flattree_vars = uproot.open(rf_path)['FlatTree_VARS'].arrays(library='ak', **kwargs)
+        else:
+            trees = []
+            for path in rf_path:
+                tree = uproot.open(path)['FlatTree_VARS'].arrays(library='ak', **kwargs)
+                trees.append(tree)
+            self._flattree_vars = ak.concatenate(trees)
 
     def get_tree_array(self) -> ak.highlevel.Array:
         """
