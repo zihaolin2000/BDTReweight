@@ -1,5 +1,6 @@
 import uproot
 import numpy as np
+from numpy.typing import ArrayLike
 import awkward as ak
 from .utilities import particle_mass_lookup, particle_pdg_lookup
 
@@ -84,7 +85,7 @@ class NuisanceFlatTree:
         """
         return self._total_xsec
     
-    def get_conversion_factor_eventrate_to_xsec(self):
+    def get_conversion_factor_eventrate_to_xsec(self) -> float:
         """
         Get the conversion factor converting event rate to cross-section.
         In NUISANCE, fScaleFactor is the same for all events in
@@ -100,7 +101,7 @@ class NuisanceFlatTree:
         """
         return self._flattree_vars['fScaleFactor'][0]
 
-    def get_mask_CCQELike(self) -> np.ndarray:
+    def get_mask_CCQELike(self) -> ArrayLike:
         """
         Get the boolean mask for CCQE-like events.
 
@@ -110,12 +111,15 @@ class NuisanceFlatTree:
 
         Returns
         ----------
-        np.ndarray
+        ArrayLike
             Boolean mask for CCQE-like.
         """
         return np.array(self._flattree_vars['flagCCQELike'])
-    
-    def get_mask_topology(self, particle_counts : dict = {}, KE_thresholds : dict = {}) -> np.ndarray:
+
+    def get_mask_target_atomic_number(self, A : int) -> ArrayLike:
+        pass
+
+    def get_mask_topology(self, particle_counts : dict = {}, KE_thresholds : dict = {}) -> ArrayLike:
         """
         Get the boolean mask for events of entered topology.
 
@@ -147,8 +151,7 @@ class NuisanceFlatTree:
         
         Returns
         ----------
-        np.ndarray
-            Boolean mask for entries fall in the specified topology.
+        ArrayLike
         """
         count_masks = []
         for particle, rule in particle_counts.items():
