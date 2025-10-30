@@ -82,14 +82,15 @@ class NuisanceFlatTree:
         Returns
         ----------
         float
+            Events total cross-section in unit of cm^2.
         """
         return self._total_xsec
     
     def get_conversion_factor_eventrate_to_xsec(self) -> float:
         """
-        Get the conversion factor converting event rate to cross-section.
-        In NUISANCE, fScaleFactor is the same for all events in
-        flat tree.
+        Get the conversion factor converting event rate to 
+        cross-section. In NUISANCE, fScaleFactor is the same for all
+        events in flat tree.
 
         Parameters
         ----------
@@ -98,6 +99,7 @@ class NuisanceFlatTree:
         Returns
         ----------
         float
+            Conversion factor from event rate to cross-section.
         """
         return self._flattree_vars['fScaleFactor'][0]
 
@@ -112,7 +114,7 @@ class NuisanceFlatTree:
         Returns
         ----------
         ArrayLike
-            Boolean mask for CCQE-like.
+            Boolean mask for CCQE-like events.
         """
         return np.array(self._flattree_vars['flagCCQELike'])
 
@@ -131,6 +133,8 @@ class NuisanceFlatTree:
         Returns
         ----------
         ArrayLike
+            Boolean mask for events with target nuclei of A Z.
+
         """
         is_A = self._flattree_vars['tgta'] == A
         is_Z = self._flattree_vars['tgtz'] == Z
@@ -169,6 +173,8 @@ class NuisanceFlatTree:
         Returns
         ----------
         ArrayLike
+            Boolean mask for events of entered topology.
+            
         """
         count_masks = []
         for particle, rule in particle_counts.items():
