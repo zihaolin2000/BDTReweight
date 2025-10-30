@@ -9,9 +9,10 @@ PARTICLE_PDG = {
     'numu':14,
     'nue':12,
     'photon':22,
-    'pi+':211,
-    'pi-':-211,
-    'pi0':111
+    'pip':211,
+    'pim':-211,
+    'pi0':111,
+    'genieBindingE':2000000101
 }
 
 PARTICLE_MASS = {
@@ -22,9 +23,10 @@ PARTICLE_MASS = {
     'numu':0.0,
     'nue':0.0,
     'photon':0.0,
-    'pi+':0.13957,
-    'pi-':0.13957,
-    'pi0':0.13498
+    'pip':0.13957,
+    'pim':0.13957,
+    'pi0':0.13498,
+    'genieBindingE':0.0
 }
 
 def particle_pdg_lookup(particle : str) -> int:

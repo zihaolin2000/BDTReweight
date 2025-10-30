@@ -178,7 +178,7 @@ class NuisanceFlatTree:
                 Must follow python syntax, as it will be evaluated
                 by eval() later.
             For example, 
-                {'proton':'>=1', 'muon':'==1', 'pi+':'<=1', 
+                {'proton':'>=1', 'muon':'==1', 'pip':'<=1', 
                 'neutron':'>0'}
         KE_thresholds : dict, optional
             Kinetic energy thresholds applied to particles. Only
@@ -234,7 +234,7 @@ class NuisanceFlatTree:
         particle : str
             Particle of quest. 
             Particle options: 'muon','electron','proton','neutron',
-            'photon','pi+','pi-','pi0'
+            'photon','pip','pim','pi0'
         KE_threshold : float
             A kinetic energy threshold applied to particle. Only 
             particles with KE >= KE_threshold are counted. 
@@ -248,7 +248,7 @@ class NuisanceFlatTree:
         """
         num_particles = []
 
-        if particle not in ['muon', 'electron', 'proton', 'neutron', 'photon', 'pi+', 'pi-', 'pi0']:
+        if particle not in ['muon', 'electron', 'proton', 'neutron', 'photon', 'pip', 'pim', 'pi0']:
             raise ValueError(f'Particle not registered: {particle}')
     
         # default masking: all entries
@@ -283,7 +283,7 @@ class NuisanceFlatTree:
             form 'selector_particle_variable'.
             Selector options: 'leading','subleading','total'
             Particle options: 'muon','electron','proton','neutron',
-                'photon','pi+','pi-','pi0'
+                'photon','pip','pim','pi0'
             Variable options: 'px','py','pz','E','KE'
         mask : 1d int or bool tuple, optional
             Masking applied to self._flattree_vars before selection.
@@ -327,7 +327,7 @@ class NuisanceFlatTree:
             selector, particle, variable = expr.split('_')
             if selector not in ['leading','subleading', 'total']:
                 raise ValueError(f'Selector not registered: {selector}')
-            if particle not in ['muon', 'electron', 'proton', 'neutron', 'photon', 'pi+', 'pi-', 'pi0']:
+            if particle not in ['muon', 'electron', 'proton', 'neutron', 'photon', 'pip', 'pim', 'pi0']:
                 raise ValueError(f'Particle not registered: {particle}')
             if variable not in ['px', 'py', 'pz', 'E', 'KE']:
                 raise ValueError(f'Variable not registered: {variable}')
