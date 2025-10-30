@@ -103,9 +103,30 @@ class NuisanceFlatTree:
         """
         return self._flattree_vars['fScaleFactor'][0]
 
-    def get_mask_CCQELike(self) -> ArrayLike:
+    def get_mask_final_state_allowed_pdg(self, pdg_list : list) -> ArrayLike:
         """
-        Get the boolean mask for CCQE-like events.
+        Get the boolean mask for events whose final states
+        exclusively have only the specified allowed pdg.
+
+        Parameters
+        ----------
+        pdg_list : list
+            List of integer pdg values.
+
+        Returns
+        ----------
+        ArrayLike
+            Boolean mask for events with specified final state pdgs.
+        """
+        mask = ak.full_like(self._flattree_vars['pdg'], False, dtype=bool)
+        for pdg in pdg_list:
+            mask = mask | (self._flattree_vars['pdg']==pdg)
+        return ak.all(mask,axis=1)
+
+    def get_mask_flagCCQELike(self) -> ArrayLike:
+        """
+        Get the boolean mask: flagCCQELike (from NUISANCE flat tree
+        directly). 
 
         Parameters
         ----------
