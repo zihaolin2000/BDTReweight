@@ -12,7 +12,7 @@ PARTICLE_PDG = {
     'pip':211,
     'pim':-211,
     'pi0':111,
-    'genieBindingE':2000000101
+    'genieBindino':2000000101 # GENIE special particle: binding energy subtracted from f/s nucleons
 }
 
 PARTICLE_MASS = {
@@ -26,7 +26,7 @@ PARTICLE_MASS = {
     'pip':0.13957,
     'pim':0.13957,
     'pi0':0.13498,
-    'genieBindingE':0.0
+    'genieBindino':0.0
 }
 
 def particle_pdg_lookup(particle : str) -> int:
