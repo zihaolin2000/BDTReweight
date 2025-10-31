@@ -100,3 +100,22 @@ def scalar_component_vectors(v1s : np.ndarray, v2s : np.ndarray) -> ArrayLike:
     v2s_unit = normalize_vectors(v2s)
     return np.sum(v1s * v2s_unit, axis=1)
 
+def cosine_theta_vectors(v1s : np.ndarray, v2s : np.ndarray) -> ArrayLike:
+    """
+    Treat entry v1,v2 in v1s,v2s as physical vector pairs, and
+    calculate cos(theta) for angle theta between v1,v2.
+
+    Parameters
+    ----------
+    v1s : np.ndarray
+        2d array where each entry is a physical vector.
+    v2s : np.ndarray
+        2d array where each entry is a physical vector. Must has the
+        same shape as v1s.
+
+    Returns
+    ----------
+    np.ndarray
+        float array of cos(theta).
+    """
+    return np.sum(normalize_vectors(v1s) * normalize_vectors(v2s), axis = 1)
