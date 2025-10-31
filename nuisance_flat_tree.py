@@ -2,7 +2,7 @@ import uproot
 import numpy as np
 from numpy.typing import ArrayLike
 import awkward as ak
-from .utilities import particle_mass_lookup, particle_pdg_lookup
+from .utilities import particle_mass_lookup, particle_pdg_lookup, cosine_theta_vectors
 
 class NuisanceFlatTree:
     """
@@ -208,6 +208,49 @@ class NuisanceFlatTree:
         for count_mask in count_masks:
             final_mask = final_mask & count_mask
         return final_mask
+
+    def get_indices_genie2_drop_fsibug_events(self) -> ArrayLike:
+        """
+        Get indices of good events with no elastic FSI bug for GENIE
+        v2.
+
+        Parameters
+        ----------
+        None
+
+        Returns
+        ----------
+        ArrayLike
+            int indices of mask.
+        """
+        indices_1p0n = self.mask_to_indices((self.get_mask_topology({'muon':'==1','proton':'==1','neutron':'==0'})) & (self._flattree_vars['tgta'] > 2))
+        arr = self.get_tree_array_copy()
+        arr = arr[indices_1p0n]
+
+        v1s = np.array(np.stack([arr['px_vert'][:,5], arr['py_vert'][:,5], arr['pz_vert'][:,5]])).T
+        v2s = np.array(np.stack([arr['px'][:,1], arr['py'][:,1], arr['pz'][:,1]])).T
+        costheta = cosine_theta_vectors(v1s, v2s)
+
+        # Elastic FSI bug changes FSI proton angle unphysically.
+        indices_FSIbug = indices_1p0n[costheta < 0.9999996] # Give a machine tolerance
+        indices_tree = np.arange(0, len(self._flattree_vars))
+        indices_good = np.delete(indices_tree, indices_FSIbug)
+        return indices_good
+
+    def mask_to_indices(self, mask : ArrayLike) -> ArrayLike:
+        """
+        Convert boolean mask to integer indices of events.
+
+        Parameters
+        ----------
+        mask : ArrayLike
+            Boolean masking for events. 
+        Returns
+        ----------
+        ArrayLike
+            int indices of mask.
+        """
+        return np.where(mask)[0]
 
     def update_tree_with_mask(self, mask : ArrayLike) -> None:
         """
