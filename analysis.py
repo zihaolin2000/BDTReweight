@@ -133,7 +133,7 @@ def calculate_weighted_diff_histogram_and_stat_errors(var : ArrayLike, weights :
 def draw_source_target_distributions_and_ratio(source : pd.DataFrame, target : pd.DataFrame, variables : list = [], bottom_adjust : float = 0.1,
         label_subplot_abc : bool = True, legends : list = ['', '', ''], KS_test : bool = True, source_weights : ArrayLike = None,
         new_source_weights : ArrayLike = None, target_weights : ArrayLike = None, scale_source : float = 1.0, scale_target : float = 1.0,
-        xlabels : list = None, ylabels : list = None, quantile_range : tuple = [0.005, 0.995]) -> None:
+        xlabels : list = None, ylabels : list = None, quantile_range : tuple = [0.005, 0.995], savepath : str = None, figshow : bool = True) -> None:
     """
     Draw distributions of variables of source, source reweighted, and
     target sample in grids of subplots. 
@@ -180,6 +180,12 @@ def draw_source_target_distributions_and_ratio(source : pd.DataFrame, target : p
         to be plotted. Use this to constrain plot range for better
         visualization.
         Default: [0.005, 0.995]
+    savepath : str, optional
+        If not none, figure will be saved to provided path.
+    figshow : bool, optional
+        If true, figure will displayced with plt.show(). 
+        Note: it slows down remote terminal transfer.
+        Default : True
 
     Returns
     ----------
@@ -218,7 +224,7 @@ def draw_source_target_distributions_and_ratio(source : pd.DataFrame, target : p
                          log=True, bins=30, alpha=alpha, color='goldenrod')
             ax_main.tick_params(which='both', direction='in')
             ax_main.set_xlim(0, None)
-            ax_main.set_ylim(0, None)
+            # ax_main.set_ylim(0, None)
             ax_main.set_xlabel(f'new weights')
             ax_main.set_ylabel('counts (log scale)')
             continue
@@ -319,7 +325,14 @@ def draw_source_target_distributions_and_ratio(source : pd.DataFrame, target : p
 
     fig.legend(handles, labels, loc='lower center', ncol=5, frameon=False)
     fig.subplots_adjust(bottom=bottom_adjust)
-    plt.show()
+
+    if figshow == True:
+        plt.show()
+    
+    if savepath is not None:
+        plt.savefig(savepath)
+
+    plt.close()
 
 def draw_2Dxsec_and_efficiency(df_genie2=[],df_genie3=[],xybins=(np.linspace(0,0.6,20),np.linspace(0,2,20)),fScale_genie2=0,fScale_genie3=0,
                Xsec_columns=('dpt','pT_muon'), xylabels=('$\delta p_T \ (\\text{GeV}/c)$','$p^\mu_T \ (\\text{GeV}/c)$')):
