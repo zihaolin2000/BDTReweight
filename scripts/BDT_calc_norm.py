@@ -9,8 +9,8 @@ from BDTReweight.reweighter import Reweighter
 import numpy as np
 print('Imported.')
 
-train_size = 'train_size_1M'
-# train_size = 'train_size_4M'
+# train_size = 'train_size_1M'
+train_size = 'train_size_4M'
 
 target_train_magnitude = {
     '0p0n':9703/4,
@@ -291,6 +291,7 @@ for category in categories:
         means.append(np.mean(ratios))
 
 print('mean ratio:', means)
-means = np.array(means)
-np.savetxt(f'/exp/minerva/data/users/zihaolin/BDTReweighters/saved_reweighters_pickle/{train_size}/CCQELike_MINERvA_GENIEv2_to_v3AR23_topology_normalizations.txt',
-        means, fmt='%.10f')
+if len(means)==7:
+        means = np.array(means)
+        np.savetxt(f'/exp/minerva/data/users/zihaolin/BDTReweighters/saved_reweighters_pickle/{train_size}/CCQELike_MINERvA_GENIEv2_to_v3AR23_topology_normalizations.txt',
+                means, fmt='%.10f')

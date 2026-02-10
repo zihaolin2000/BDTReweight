@@ -14,8 +14,8 @@ print('Imported.')
 size = 1000000
 # size = 4000000
 
-train_size = 'train_size_1M'
-# train_size = 'train_size_4M'
+# train_size = 'train_size_1M'
+train_size = 'train_size_4M'
 
 # prepare source sample NuisanceFlatTree for training
 print('Load source MC test sample...')
