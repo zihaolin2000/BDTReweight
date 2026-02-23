@@ -321,10 +321,9 @@ def draw_source_target_distributions_and_ratio(source : pd.DataFrame, target : p
             ks_score1 = ks_2samp_weighted(source[variable], target[variable], weights1=source_weights, weights2=target_weights)
             ks_score2 = ks_2samp_weighted(source[variable], target[variable], weights1=new_source_weights, weights2=target_weights)
             KS_text = '$D_{\\text{KS}}$'+f'\nbefore: {ks_score1:.3f}\nafter: {ks_score2:.3f}'
-            KS_line, = ax_main.plot([0], [0],color='white',alpha=0.0, label=KS_text)
+            # KS_line, = ax_main.plot([0], [0],color='white',alpha=0.0, label=KS_text)
             # explicitly print handle/label on subplot ax_main
             ax_main.text(0.98, 0.95, KS_text, transform=ax_main.transAxes,ha='right', va='top', fontsize=8, bbox=dict(facecolor='white', alpha=0.6, edgecolor='none', pad=1.0))
-
 
 
 
