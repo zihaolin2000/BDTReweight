@@ -3,12 +3,15 @@ from nuisance_event import NUISANCEEvent, NUISANCEFile
 import numpy as np
 from tqdm import tqdm
 import uproot
+from nuisance_flat_tree import NUISANCEFlatTree
 
 def perform_selection(input_file, output_file, sample, max_events=-1):
 
     treename='FlatTree_VARS'
     f = NUISANCEFile(filepath=input_file, treename=treename, relevant_keys=None)
     num_entries = len(f)
+
+    flat_tree = NUISANCEFlatTree(filepath=input_file, treename=treename)
 
     selection_mask = np.zeros(num_entries, dtype=bool)
 
@@ -27,12 +30,12 @@ def perform_selection(input_file, output_file, sample, max_events=-1):
             raise ValueError(f"Unknown sample type: {sample}")
 
         selection_mask[i] = selected
-    flagCCQELike_mask = f.get_mask_flagCCQELike()
-    falgCC0piMINERVa_mask = f.get_mask_flagCC0piMINERVA()
+    flagCCQELike_mask = flat_tree.get_mask_flagCCQELike()
+    falgCC0piMINERVa_mask = flat_tree.get_mask_flagCC0piMINERVA()
     # print out final state particle contents for those events that pass the CCQELike selection but fail the falgCC0piMINERVa_mask or flagCCQELike_mask
     for i in range(num_entries):
         if selection_mask[i] and (not flagCCQELike_mask[i] or not falgCC0piMINERVa_mask[i]):
-            event = f.get_event(i)
+            event = f[i]
             print(f"Event {i} passes CCQELike selection but fails flagCCQELike or falgCC0piMINERVa:")
             print(f"  Final state particles: {event.final_state_particles}")
             print(f"  flagCCQELike: {flagCCQELike_mask[i]}, falgCC0piMINERVa: {falgCC0piMINERVa_mask[i]}")
