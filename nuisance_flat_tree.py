@@ -140,6 +140,24 @@ class NuisanceFlatTree:
         """
         return np.array(self._flattree_vars['flagCCQELike'])
 
+    def get_mask_flagCC0piMINERVA(self) -> ArrayLike:
+        """
+        Get the boolean mask: flagCCQELike (from NUISANCE flat tree
+        directly).
+
+        Parameters
+        ----------
+        None
+
+        Returns
+        ----------
+        ArrayLike
+            Boolean mask for CCQE-like events.
+        """
+        return np.array(self._flattree_vars['flagCC0piMINERvA'])
+
+
+
     def get_mode(self) -> ArrayLike:
         """
         Get the interaction mode (from NUISANCE flat tree
