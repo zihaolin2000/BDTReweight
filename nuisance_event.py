@@ -289,10 +289,8 @@ class NUISANCEEvent:
         genie_n_heavy_baryons_plus_pi0s = np.sum(np.isin(pdg, list(heavy_baryon_pdgs)) | (pdg == 111))
 
         proton_mask = (pdg == 2212)
-        proton_E = 1058.272
-        if remove_proton_KE:
-            proton_E = 938.28
-        genie_n_protons = np.sum(proton_mask & (E > proton_E))  # antinu
+        proton_E = 938.28
+        genie_n_protons = np.sum(proton_mask)  
 
         if neutrinoMode:
             if genie_n_muons == 1 and genie_n_mesons == 0 and genie_n_heavy_baryons_plus_pi0s == 0 and genie_n_photons == 0:
@@ -303,7 +301,36 @@ class NUISANCEEvent:
 
         return False
 
+    def print_final_state_particles(self):
+        """Printout number of muons, neutrons, protons, pions, and photons in the final state."""
+        pdg = np.array(self.pdg)
+        E = np.array(self.E)
 
+        genie_n_muons = np.sum(np.abs(pdg) == 13)
+
+        photon_mask = (pdg == 22)
+        genie_n_photons = np.sum(photon_mask)
+        genie_n_photons_above10MeV = np.sum(photon_mask & (E > 10))
+
+        meson_pdgs = {211, -211, 321, -321, 323, -323, 111, 130, 310, 311, -311, 313, -313, 111}
+        genie_n_mesons = np.sum(np.isin(pdg, list(meson_pdgs)))
+
+        heavy_baryon_pdgs = {3112, 3122, 3212, 3222, 4112, 4122, 4212, 4222, 411, -411, 421, -421}
+        genie_n_heavy_baryons_plus_pi0s = np.sum(np.isin(pdg, list(heavy_baryon_pdgs)))
+
+        proton_mask = (pdg == 2212)
+        genie_n_protons = np.sum(proton_mask)
+
+        neutron_mask = (pdg == 2112)
+        genie_n_neutrons = np.sum(neutron_mask)
+
+        print(f"Final state particles:")
+        print(f"  Muons: {genie_n_muons}")
+        print(f"  Photons: {genie_n_photons} ({genie_n_photons_above10MeV} above 10 MeV)")
+        print(f"  Mesons: {genie_n_mesons}")
+        print(f"  Heavy baryons: {genie_n_heavy_baryons_plus_pi0s}")
+        print(f"  Protons: {genie_n_protons}")
+        print(f"  Neutrons: {genie_n_neutrons}")
 
 
 
@@ -338,6 +365,34 @@ class NUISANCEFile:
             for i in range(n):
                 data = {k: arrays[k][i] for k in self.keys}
                 yield NUISANCEEvent(**data)
+
+    def __getitem__(self, index):
+        """Return an event by index.
+        
+        Parameters
+        ----------
+        index : int
+            Event index (0-based). Supports negative indexing.
+            
+        Returns
+        -------
+        NUISANCEEvent
+            Event at the specified index.
+        """
+        # Handle negative indices
+        if index < 0:
+            index = self._nentries + index
+        
+        # Check bounds
+        if index < 0 or index >= self._nentries:
+            raise IndexError(f"Index {index} out of range for tree with {self._nentries} entries")
+        
+        # Read single entry
+        arrays = self.tree.arrays(self.keys, entry_start=index, entry_stop=index+1, library="np")
+        
+        # Create event from the first (and only) entry
+        data = {k: arrays[k][0] for k in self.keys}
+        return NUISANCEEvent(**data)
 
     def __len__(self):
         return self._nentries

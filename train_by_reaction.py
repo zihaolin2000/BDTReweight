@@ -24,7 +24,9 @@ p = argparse.ArgumentParser(description='Train BDT reweighter by reaction channe
 p.add_argument('--source_path', '-s', type=str, help='Path to the source model ROOT file.')
 p.add_argument('--target_path', '-t', type=str, help='Path to the target model ROOT file.')
 p.add_argument('--module_path', '-m', type=str, help='Path to the BDTReweight module.')
+p.add_argument('--model_name', type=str, help='Identifier of the target model.')
 p.add_argument('--build_tree_of_weights',action='store_true', help='Activate building a ROOT TTree with the reweighting weights.')
+p.add_argument('--shape_only', action='store_true', help='Only reweight shape, do not change total cross section')
 
 build_tree_of_weights = False
 
@@ -46,8 +48,17 @@ if args.module_path:
 
 # source_path = '/Users/lorenzo/cernbox/MINERVA_MC/source/ReweightSourceCCQELike_minervame1M.root'
 
-target_model_name = pathlib.Path(target_path).stem
-target_model_name = re.search(r'MINERvAflux_([^_]+)_', target_model_name).group(1)
+if args.model_name:
+    target_model_name = args.model_name
+else:
+    target_model_name = pathlib.Path(target_path).stem
+    target_model_name = re.search(r'MINERvAflux_([^_]+)_', target_model_name).group(1)
+    if target_model_name is None:
+        print("CAN'T IDENTIFY TARGET MODEL NAME! ABORT!")
+        exit
+
+print(f'Reweighting to target model: {target_model_name}')
+
 
 tree_source_train = uproot.open(source_path)['EventKinematics_truth'].arrays(library='pd')
 
@@ -63,14 +74,18 @@ plt.figure()
 plt.hist(tree_source_train[tree_source_train['topology']=='0p0n']['total_proton_KE'], bins = 300, label='source model',alpha=0.5, range=(0.001,2.), weights=tree_source_train[tree_source_train['topology']=='0p0n']['init_wgt'])
 plt.xlabel(r'$\sum T_{p}$ [GeV]')
 # y in log scale
-plt.yscale('log')
+# plt.yscale('log')
 plt.ylabel('counts')
 
-plt.savefig('sum_Tp_source_model_0p0n.png')
+pics_folder_name = args.module_path + "pics/" + target_model_name + "/"
+os.makedirs(args.module_path + "pics/", exist_ok=True)
+os.makedirs(pics_folder_name, exist_ok=True)
+
+plt.savefig(f'{pics_folder_name}sum_Tp_source_model_0p0n.png')
 print("Saved sum_Tp_source_model_0p0n.png")
 plt.close()
 
-print(tree_source_train.keys())
+# print(tree_source_train.keys())
 
 source_train = {}
 source_test = {}
@@ -97,17 +112,28 @@ scale_target_train = 1 # 1.84e-43
 source_file = ROOT.TFile(source_path)
 h_xsec_ccqelike = ROOT.TH1D(source_file.Get('h_eventRate_qelike_cross_section'))
 source_ccqelike_xsec = h_xsec_ccqelike.GetBinContent(1)
+h_xsec_total = ROOT.TH1D(source_file.Get('h_eventRate_mc_cross_section'))
+source_total_xsec = h_xsec_total.GetBinContent(1)
 # h_xsec_ccqelike_qe = source_file['h_eventRate_qelike_qe_cross_section']
 # h_xsec_tot = source_file['h_eventRate_mc_cross_section']
 # xsec is just the bin content of the histogram (only one bin)
+print(f"Total xsec from source model: {source_total_xsec*1e38:.2f} x 10^-38 cm^2")
 print(f"Total CCQELike xsec from source model: {source_ccqelike_xsec*1e38:.2f} x 10^-38 cm^2")
 
-
+# if 'neut_MINERvAflux_EDRMF_nu_all_NUISFLAT_' in target_path:
+    # target_is_from_hadded = True
+target_is_from_hadded = False
 # this is a bit silly: since I did hadd on nuisance flat trees, the total xsec is multiplied by the number of files I hadded (10)
-target_ccqelike_xsec = tree_target_train.get_total_xsec()/10.
+target_ccqelike_xsec = tree_target_train.get_total_xsec()
+if target_is_from_hadded:
+    target_ccqelike_xsec /= 10 # divide by the number of files I hadded to get the correct total xsec for the target model (weird NUISANCE behavior...)
 print(f"Total CCQELike xsec from target model: {target_ccqelike_xsec*1e38:.2f} x 10^-38 cm^2")
 
 scale_target_train = target_ccqelike_xsec / source_ccqelike_xsec
+
+if args.shape_only:
+    print('Ignoring total cross section and modifying only shape')
+    scale_target_train = 1.0
 
 # Category name:
 category = '0p0n'
@@ -235,7 +261,7 @@ for process in ['2p2h','QE','Oth']:
 
     # add gloabal title to the figure
     fig.suptitle(f'Reweighting Result for process: {process} in category: {category}', fontsize=16)
-    fig.savefig(f'ReweightingResult_{process}_{category}.png')
+    fig.savefig(f'{pics_folder_name}ReweightingResult_{process}_{category}.png')
     print(f"Saved reweighting result figure to ReweightingResult_{process}_{category}.png")
     plt.close()
 
@@ -253,7 +279,7 @@ for process in ['2p2h','QE','Oth']:
 
     # add gloabal title to the figure
     fig.suptitle(f'Shape only. Process: {process} in category: {category}', fontsize=16)
-    fig.savefig(f'ReweightingResult_{process}_{category}_Shape.png')
+    fig.savefig(f'{pics_folder_name}ReweightingResult_{process}_{category}_Shape.png')
     print(f"Saved reweighting result figure to ReweightingResult_{process}_{category}_Shape.png")
     plt.close()
 

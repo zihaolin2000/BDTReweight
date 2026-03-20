@@ -37,8 +37,11 @@ class NuisanceFlatTree:
         None
         """
         if type(rf_path) is str:
+            print("Opening FlatTree_VARS ...", end='',flush=True)
             self._flattree_vars = uproot.open(rf_path)['FlatTree_VARS'].arrays(library='ak', **kwargs)
             self._total_xsec = np.sum(self._flattree_vars['fScaleFactor'])
+            print("  Done!")
+
         else:
             trees = []
             # Assuming all samples are generated from the same

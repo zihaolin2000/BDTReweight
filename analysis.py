@@ -190,39 +190,85 @@ def draw_source_target_distributions_and_ratio(source : pd.DataFrame, target : p
 
     # create grids of subplots
     n_plots = len(variables)
-    figheight = int((n_plots - 1) / 3 + 1)
-    fig = plt.figure(figsize=[15, 3 * figheight], dpi=200)
-    alpha= 0.5
-    outer_grid = GridSpec(figheight, 3, figure=fig, wspace=0.25, hspace=0.32)
+    has_weight = 'weight' in variables
+    
+    # Adjust grid dimensions to accommodate weight variable (which takes 2 columns)
+    if has_weight:
+        # Count actual grid cells needed: weight = 2 columns, others = 1 column
+        n_cols = 4  # Increase to 4 columns to have room for weight (2 cols) + other plot (1 col) + buffer
+        n_weight_vars = sum(1 for v in variables if v == 'weight')
+        n_non_weight_vars = n_plots - n_weight_vars
+        # Rough estimate of rows needed
+        figheight = int((n_non_weight_vars + n_weight_vars * 2 - 1) / n_cols + 1)
+        figwidth = 18  # Increased from 15 to accommodate 4 columns
+    else:
+        n_cols = 3
+        figheight = int((n_plots - 1) / 3 + 1)
+        figwidth = 15
+    
+    fig = plt.figure(figsize=[figwidth, 3 * figheight], dpi=200)
+    alpha = 0.5
+    outer_grid = GridSpec(figheight, n_cols, figure=fig, wspace=0.3, hspace=0.32)
     handles, labels = [], []
+    
+    # Track grid position accounting for weight taking 2 columns
+    plot_row, plot_col = 0, 0
     
     # loop through variables and plot
     for idx, variable in enumerate(variables):
-        row, col = divmod(idx, 3)
+        # For weight, allocate 2 columns; for others, allocate 1
+        if variable == 'weight':
+            col_span = 2
+        else:
+            col_span = 1
+        
+        # Check if we need to wrap to next row
+        if plot_col + col_span > n_cols:
+            plot_row += 1
+            plot_col = 0
+        
+        row, col = plot_row, plot_col
+        plot_col += col_span
 
         if variable != 'weight':
             # plot histogram and ratio of source / target
-            inner_grid = GridSpecFromSubplotSpec(2, 1, subplot_spec=outer_grid[row, col], height_ratios=[3, 1], hspace=0.0)
+            if col_span == 1:
+                inner_grid = GridSpecFromSubplotSpec(2, 1, subplot_spec=outer_grid[row, col], height_ratios=[3, 1], hspace=0.0)
+            else:
+                inner_grid = GridSpecFromSubplotSpec(2, 1, subplot_spec=outer_grid[row, col:col+col_span], height_ratios=[3, 1], hspace=0.0)
             ax_main = fig.add_subplot(inner_grid[0])
             ax_ratio = fig.add_subplot(inner_grid[1], sharex=ax_main)
         else:
             # plot log scale histogram for source sample new weights; don't plot ratio
-            inner_grid = GridSpecFromSubplotSpec(1, 1, subplot_spec=outer_grid[row, col])
+            inner_grid = GridSpecFromSubplotSpec(1, 2, subplot_spec=outer_grid[row, col:col+col_span], wspace=0.35)
             ax_main = fig.add_subplot(inner_grid[0])
+            ax_log = fig.add_subplot(inner_grid[1])
             ax_ratio = None
 
         if label_subplot_abc:
-            ax_main.text(1.00, 1.02, f'{chr(ord("a")+idx)}.', transform=ax_main.transAxes,ha='right', va='bottom')
+            ax_main.text(1.00, 1.02, f'{chr(ord("a")+idx)}.', transform=ax_main.transAxes, ha='right', va='bottom')
 
         if variable == 'weight':
-            # plot source sample new weights, normalized
+            # plot source sample new weights (left) and log(weights) (right) side-by-side
+            
+            # Left: normalized weights histogram (log scale)
             ax_main.hist(new_source_weights * len(new_source_weights)/np.sum(new_source_weights),
                          log=True, bins=30, alpha=alpha, color='goldenrod')
             ax_main.tick_params(which='both', direction='in')
             ax_main.set_xlim(0, None)
             ax_main.set_ylim(0, None)
-            ax_main.set_xlabel(f'new weights')
+            ax_main.set_xlabel('new weights')
             ax_main.set_ylabel('counts (log scale)')
+            
+            # Right: log(weights) histogram (log scale)
+            log_weights = np.log(new_source_weights)
+            ax_log.hist(log_weights, bins=200, alpha=alpha, color='skyblue')
+            ax_log.tick_params(which='both', direction='in')
+            ax_log.set_xlim(None, None)
+            ax_log.set_ylim(0, None)
+            ax_log.set_xlabel('log(weights)')
+            ax_log.set_ylabel('counts')
+            
             continue
 
         # Plot the selected quantile rage of data to depict majority of data
@@ -283,7 +329,7 @@ def draw_source_target_distributions_and_ratio(source : pd.DataFrame, target : p
                 error_ratio = ratio * np.sqrt((e1 / h1)**2 + (e3 / h3)**2)
                 # avoid divide by zeros
                 valid = (h1 > 0) & (h3 > 0) & np.isfinite(ratio) & np.isfinite(error_ratio) & (error_ratio >= 0)
-            ax_ratio.errorbar(bin_centers[valid], ratio[valid], yerr=error_ratio[valid], label='ratio $v2 / v3$',
+            ax_ratio.errorbar(bin_centers[valid], ratio[valid], yerr=error_ratio[valid], label='ratio $s / t$',
                               fmt='.', color='orange', markersize=3,capsize=2,alpha=alpha)
             with np.errstate(divide='ignore', invalid='ignore'):
                 ratio = np.true_divide(h2, h3)
@@ -291,7 +337,7 @@ def draw_source_target_distributions_and_ratio(source : pd.DataFrame, target : p
                 # Mask valid entries only
                 valid = (h2 > 0) & (h3 > 0) & np.isfinite(ratio) & np.isfinite(error_ratio) & (error_ratio >= 0)
 
-            ax_ratio.errorbar(bin_centers[valid], ratio[valid], yerr=error_ratio[valid], label='ratio $v2\' / v3$',
+            ax_ratio.errorbar(bin_centers[valid], ratio[valid], yerr=error_ratio[valid], label='ratio $s\' / t$',
                               fmt='.', color='purple', markersize=3,capsize=2,alpha=alpha)
 
             ax_ratio.axhline(1, color='gray', linestyle='-',alpha=alpha)
@@ -313,9 +359,10 @@ def draw_source_target_distributions_and_ratio(source : pd.DataFrame, target : p
             handles.extend(h)
             labels.extend(l)
 
-            h, l = ax_ratio.get_legend_handles_labels()
-            handles.extend(h)
-            labels.extend(l)
+            if ax_ratio is not None:
+                h, l = ax_ratio.get_legend_handles_labels()
+                handles.extend(h)
+                labels.extend(l)
         
         if KS_test:
             ks_score1 = ks_2samp_weighted(source[variable], target[variable], weights1=source_weights, weights2=target_weights)
