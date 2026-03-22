@@ -45,10 +45,11 @@ case "$target_model_id" in
     ;;
 esac
 
-
+target_folder=$(dirname "$target")
 
 python3 ${MINERVA}/BDTReweight/train_by_reaction.py \
                     --source_path $source \
                     --target_path $target \
                     --module_path ${MINERVA} \
+                    --plots_dir ${target_folder}/plots_${target_model_id} \
                     --model_name ${target_model_id} 
