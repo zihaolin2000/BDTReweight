@@ -235,6 +235,7 @@ p.add_argument('--model_name', type=str, help='Identifier of the target model.')
 p.add_argument('--build_tree_of_weights',action='store_true', help='Activate building a ROOT TTree with the reweighting weights.')
 p.add_argument('--shape_only', action='store_true', help='Only reweight shape, do not change total cross section')
 p.add_argument('--max_events', type=int, default=None, help='Maximum number of events to use for training (for both source and target).')
+p.add_argument('--plots_dir', type=str, default=None, help='Full output directory for plots. If set, this path is used directly.')
 
 build_tree_of_weights = False
 
@@ -289,9 +290,13 @@ plt.xlabel(r'$\sum T_{p}$ [GeV]')
 # plt.yscale('log')
 plt.ylabel('counts')
 
-pics_folder_name = args.module_path + "pics/" + target_model_name + "/"
-os.makedirs(args.module_path + "pics/", exist_ok=True)
-os.makedirs(pics_folder_name, exist_ok=True)
+if args.plots_dir is not None:
+    plot_root = pathlib.Path(args.plots_dir).expanduser().resolve()
+else:
+    plot_root = pathlib.Path(args.module_path) / "pics" / target_model_name
+
+plot_root.mkdir(parents=True, exist_ok=True)
+pics_folder_name = str(plot_root) + "/"
 
 plt.savefig(f'{pics_folder_name}sum_Tp_source_model_0p0n.png')
 print("Saved sum_Tp_source_model_0p0n.png")
