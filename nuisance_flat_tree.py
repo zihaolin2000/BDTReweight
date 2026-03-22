@@ -19,7 +19,7 @@ class NuisanceFlatTree:
         Total cross-section in unit of cm^2.
     """
 
-    def __init__(self, rf_path: Union[str, list], **kwargs):
+    def __init__(self, rf_path: Union[str, list], max_events: int = None, **kwargs):
         """
         Initialize the NuisanceFlatTree object with given arguments.
 
@@ -28,6 +28,8 @@ class NuisanceFlatTree:
         rf_path : str | list
             NUISANCE flat tree root file path, or list of paths
             (str).
+        max_events : int, optional
+            Maximum number of events to consider.
         **kwargs : dict, optional
             kwargs for uproot.TTree.arrays() for additional
             filtering.
@@ -59,6 +61,11 @@ class NuisanceFlatTree:
             # Re-evaluate fScaleFactor
             self._flattree_vars['fScaleFactor'] = total_xsec / len(self._flattree_vars)
             self._total_xsec = total_xsec
+        
+        if max_events is not None:
+            print(f"Limiting number of events to {max_events}.")
+            self._flattree_vars = self._flattree_vars[:max_events]
+            self._total_xsec = np.sum(self._flattree_vars['fScaleFactor'])
 
     def get_tree_array_copy(self) -> ak.highlevel.Array:
         """

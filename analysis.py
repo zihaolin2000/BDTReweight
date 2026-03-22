@@ -133,7 +133,8 @@ def calculate_weighted_diff_histogram_and_stat_errors(var : ArrayLike, weights :
 def draw_source_target_distributions_and_ratio(source : pd.DataFrame, target : pd.DataFrame, variables : list = [], bottom_adjust : float = 0.1,
         label_subplot_abc : bool = True, legends : list = ['', '', ''], KS_test : bool = True, source_weights : ArrayLike = None,
         new_source_weights : ArrayLike = None, target_weights : ArrayLike = None, scale_source : float = 1.0, scale_target : float = 1.0,
-        xlabels : list = None, ylabels : list = None, quantile_range : tuple = [0.005, 0.995], shape_only = False) -> None:
+    xlabels : list = None, ylabels : list = None, quantile_range : tuple = [0.005, 0.995], shape_only = False,
+    variable_bins : dict = None) -> None:
     """
     Draw distributions of variables of source, source reweighted, and
     target sample in grids of subplots. 
@@ -191,24 +192,44 @@ def draw_source_target_distributions_and_ratio(source : pd.DataFrame, target : p
     # create grids of subplots
     n_plots = len(variables)
     has_weight = 'weight' in variables
-    
-    # Adjust grid dimensions to accommodate weight variable (which takes 2 columns)
+
+    # Use adaptive grid sizing to avoid large unused areas in the canvas.
+    # Each non-weight variable uses 1 grid unit; 'weight' uses 2 units.
+    plot_units = [2 if v == 'weight' else 1 for v in variables]
+    total_units = sum(plot_units)
+    max_unit = max(plot_units) if len(plot_units) > 0 else 1
+
     if has_weight:
-        # Count actual grid cells needed: weight = 2 columns, others = 1 column
-        n_cols = 4  # Increase to 4 columns to have room for weight (2 cols) + other plot (1 col) + buffer
-        n_weight_vars = sum(1 for v in variables if v == 'weight')
-        n_non_weight_vars = n_plots - n_weight_vars
-        # Rough estimate of rows needed
-        figheight = int((n_non_weight_vars + n_weight_vars * 2 - 1) / n_cols + 1)
-        figwidth = 18  # Increased from 15 to accommodate 4 columns
+        col_candidates = [c for c in (2, 3, 4) if c >= max_unit]
     else:
-        n_cols = 3
-        figheight = int((n_plots - 1) / 3 + 1)
-        figwidth = 15
+        col_candidates = [1, 2, 3]
+
+    best_cols = None
+    best_rows = None
+    best_empty = None
+    for c in col_candidates:
+        rows = int(np.ceil(total_units / c))
+        empty = rows * c - total_units
+        if best_empty is None or empty < best_empty or (empty == best_empty and c < best_cols):
+            best_cols = c
+            best_rows = rows
+            best_empty = empty
+
+    n_cols = best_cols
+    n_rows = max(best_rows, 1)
+
+    if n_plots == 1 and not has_weight:
+        # Single-variable plots should be compact and readable (4:3)
+        # without introducing unused outer-grid rows.
+        figwidth_in = 8
+        figheight_in = 6
+    else:
+        figwidth_in = 5 * n_cols
+        figheight_in = 3 * n_rows
     
-    fig = plt.figure(figsize=[figwidth, 3 * figheight], dpi=200)
+    fig = plt.figure(figsize=[figwidth_in, figheight_in], dpi=200)
     alpha = 0.5
-    outer_grid = GridSpec(figheight, n_cols, figure=fig, wspace=0.3, hspace=0.32)
+    outer_grid = GridSpec(n_rows, n_cols, figure=fig, wspace=0.3, hspace=0.32)
     handles, labels = [], []
     
     # Track grid position accounting for weight taking 2 columns
@@ -278,8 +299,11 @@ def draw_source_target_distributions_and_ratio(source : pd.DataFrame, target : p
             x_min = min(np.quantile(source[variable], quantile_range[0]),np.quantile(target[variable], quantile_range[0]))
         x_max = min(np.quantile(source[variable], quantile_range[1]),np.quantile(target[variable], quantile_range[1]))
 
-        # plot histogram with evenly bins of size 30
-        bins = np.linspace(x_min, x_max, 30)
+        # plot histogram with either user-provided bins or evenly spaced bins
+        if variable_bins is not None and variable in variable_bins:
+            bins = np.asarray(variable_bins[variable], dtype=float)
+        else:
+            bins = np.linspace(x_min, x_max, 30)
         bin_widths = np.diff(bins)
         bin_centers = 0.5 * (bins[1:] + bins[:-1])
 
