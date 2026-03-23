@@ -137,9 +137,9 @@ def save_mean_vs_slice_plot(
     target_means = np.asarray(target_means, dtype=float)
     reweighted_means = np.asarray(reweighted_means, dtype=float)
 
-    ax_main.plot(x_centers, source_means, 'o-', label='Source', color='tab:blue')
-    ax_main.plot(x_centers, target_means, 'o-', label='Target', color='tab:orange')
-    ax_main.plot(x_centers, reweighted_means, 'o-', label='Source (Reweighted)', color='tab:green')
+    ax_main.plot(x_centers, source_means, 'o-', label='Source', color='tab:green')
+    ax_main.plot(x_centers, target_means, 'o-', label='Target', color='tab:blue')
+    ax_main.plot(x_centers, reweighted_means, 'o-', label='Source (Reweighted)', color='tab:red')
     ax_main.set_ylabel(r'Mean $\psi^\prime$')
     ax_main.legend(loc='best')
     ax_main.grid(True, alpha=0.3)
@@ -150,7 +150,7 @@ def save_mean_vs_slice_plot(
 
     diff_target_source = target_means - source_means
     diff_reweighted_source = reweighted_means - source_means
-    ax_diff.plot(x_centers, diff_target_source, 'o-', color='tab:red', label='Target - Source')
+    ax_diff.plot(x_centers, diff_target_source, 'o-', color='tab:orange', label='Target - Source')
     ax_diff.plot(
         x_centers,
         diff_reweighted_source,
@@ -324,7 +324,7 @@ else:
 target_train = {}
 target_test = {}
 # Specify detecting thresholds and topology particle counts:
-KE_thresholds={'proton':50000, 'neutron':50000} # very large thresholds to effectively put everything in 0p0n samples
+KE_thresholds={'proton':50, 'neutron':10} # (MeV) use very large thresholds if you want to effectively put everything in 0p0n samples
 # scale_source_train = len(tree_target_train._flattree_vars)/len(tree_source_train)
 scale_source_train = 1 # 2.489225788674492e-44
 # The following factor is used to set the total xsec.
