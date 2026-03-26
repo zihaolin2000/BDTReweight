@@ -32,7 +32,7 @@ MUON_PT_BIN_EDGES_GEV = np.array([
 ], dtype=float)
 
 RECOIL_BIN_EDGES_MEV = np.array([
-    0.0, 0.0001, 20.0, 40.0, 80.0, 120.0, 160.0,
+    0.0, 20.0, 40.0, 80.0, 120.0, 160.0,
     240.0, 320.0, 400.0, 600.0, 800.0, 1400.0
 ], dtype=float)
 
@@ -465,11 +465,14 @@ print(f"Saved category count plot to {category_plot_name}")
 plt.close(fig)
 
 # Drop target events with zero proton kinetic energy to avoid unphysical entries in training.
-target_rows_before = tree_target_train.get_n_entries()
-positive_recoil_mask = np.asarray(tree_target_train.get_mask_positive_recoil_energy(), dtype=bool)
-tree_target_train.update_tree_with_mask(positive_recoil_mask)
-removed_zero_ke = target_rows_before - tree_target_train.get_n_entries()
-print(f"Removed {removed_zero_ke} target events with positive negative recoil energy")
+# GENIEv3 has a bug with events with zero proton KE. Remove them
+if (target_model_name == 'GENIEv3'):
+    target_rows_before = tree_target_train.get_n_entries()
+    positive_recoil_mask = np.asarray(tree_target_train.get_mask_positive_recoil_energy(), dtype=bool)
+    tree_target_train.update_tree_with_mask(positive_recoil_mask)
+    removed_zero_ke = target_rows_before - tree_target_train.get_n_entries()
+    print(f"Because this is model GENIEv3, we remove events with zero proton kinetic energy cause they look ill-defined in the target flat tree.")
+    print(f"Removed {removed_zero_ke} target events with zero proton kinetic energy")
 
 # extract cross section from source model file
 source_file = ROOT.TFile(source_path)
@@ -555,6 +558,8 @@ print(f"TARGET QE event rate:      {target_qe_event_rate:.0f} ({target_qe_event_
 print(f"TARGET 2p2h event rate:    {target_2p2h_event_rate:.0f} ({target_2p2h_event_rate/target_total_event_rate*100:.2f} % )")
 print(f"TARGET RES+DIS event rate: {target_resdis_event_rate:.0f} ({target_resdis_event_rate/target_total_event_rate*100:.2f} % )")
 
+
+print(f"Training on variables: {', '.join(reweight_variables)}")
 
 dict_to_tree = {}
 all_source_plot_chunks = []

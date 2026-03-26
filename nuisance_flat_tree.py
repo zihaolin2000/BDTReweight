@@ -161,9 +161,10 @@ class NuisanceFlatTree:
         # count "Nones" in total_proton_KE
         print(f"Number of events with None total_proton_KE: {ak.sum(ak.is_none(recoil_energy))}")
         recoil_energy = ak.fill_none(recoil_energy, 0.0)
-        print(f"Number of events with negative total_proton_KE: {ak.sum(recoil_energy < 0)}")
+        print(f"Number of events with total_proton_KE <= 0: {ak.sum(recoil_energy <= 0)}")
+        mask = np.asarray(recoil_energy > min_recoil_energy, dtype=bool)
 
-        return np.asarray(recoil_energy >= min_recoil_energy)
+        return mask
 
     def get_mask_final_state_allowed_pdg(self, pdg_list : list) -> ArrayLike:
         """
