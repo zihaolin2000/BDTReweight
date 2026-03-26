@@ -32,7 +32,7 @@ MUON_PT_BIN_EDGES_GEV = np.array([
 ], dtype=float)
 
 RECOIL_BIN_EDGES_MEV = np.array([
-    0.0, 20.0, 40.0, 80.0, 120.0, 160.0,
+    0.0, 0.0001, 20.0, 40.0, 80.0, 120.0, 160.0,
     240.0, 320.0, 400.0, 600.0, 800.0, 1400.0
 ], dtype=float)
 
@@ -40,6 +40,96 @@ PSI_PRIME_BIN_EDGES = np.array([
     -10.0, -5.0, -4.0, -3.0, -2.5, -2.0, -1.5, -1.0, -0.75, -0.5,
     -0.25, 0.0, 0.25, 0.5, 0.75, 1.0, 1.5, 2.0, 3.0, 5.0, 10.0
 ], dtype=float)
+
+# Default per-topology configuration; values copied from the 0p0n defaults below.
+CATEGORY_CONFIGS = {
+    '0p0n': {
+        'particle_counts': {'muon': '==1', 'proton': '==0', 'neutron': '==0'},
+        'variable_exprs': [
+            'Enu_true', 'Q2', 'q0', 'q3', 'W',
+            'leading_muon_px', 'leading_muon_py', 'leading_muon_pz', 'leading_muon_KE',
+            'total_proton_px', 'total_proton_py', 'total_proton_pz', 'total_proton_KE',
+        ],
+        'reweight_variables': ['total_proton_KE', 'leading_muon_py', 'psi_prime'],
+        'particle_names': ['total_proton'],
+        'drawing_variables': ['total_proton_KE', 'leading_muon_py', 'leading_muon_pz', 'psi_prime', 'weight'],
+    },
+    '0pNn': {
+        'particle_counts': {'muon': '==1', 'proton': '==0', 'neutron': '>=1'},
+        'variable_exprs': [
+            'Enu_true', 'Q2', 'q0', 'q3', 'W',
+            'leading_muon_px', 'leading_muon_py', 'leading_muon_pz', 'leading_muon_KE',
+            'leading_neutron_px', 'leading_neutron_py', 'leading_neutron_pz', 'leading_neutron_KE',
+            'total_proton_px', 'total_proton_py', 'total_proton_pz', 'total_proton_KE',
+        ],
+        'reweight_variables': [
+            'leading_neutron_px', 'leading_neutron_py', 'leading_neutron_pz',
+            'total_proton_px','total_proton_py','total_proton_pz',
+            'total_proton_KE','leading_muon_py','leading_muon_pz','psi_prime'
+        ],
+        'particle_names': ['leading_neutron','total_proton'],
+        'drawing_variables': [
+            'leading_neutron_px', 'leading_neutron_py', 'leading_neutron_pz',
+            'total_proton_px','total_proton_py','total_proton_pz',
+            'total_proton_KE','leading_muon_py','leading_muon_pz', 'weight'
+        ],
+    },
+    '1p0n': {
+        'particle_counts': {'muon': '==1', 'proton': '==0', 'neutron': '==0'},
+        'variable_exprs': [
+            'Enu_true', 'Q2', 'q0', 'q3', 'W',
+            'leading_muon_px', 'leading_muon_py', 'leading_muon_pz', 'leading_muon_KE',
+            'total_proton_px', 'total_proton_py', 'total_proton_pz', 'total_proton_KE',
+        ],
+        'reweight_variables': ['total_proton_KE', 'leading_muon_py', 'leading_muon_pz', 'psi_prime'],
+        'particle_names': ['total_proton'],
+        'drawing_variables': ['total_proton_KE', 'leading_muon_py', 'leading_muon_pz', 'weight'],
+    },
+    '1pNn': {
+        'particle_counts': {'muon': '==1', 'proton': '==0', 'neutron': '==0'},
+        'variable_exprs': [
+            'Enu_true', 'Q2', 'q0', 'q3', 'W',
+            'leading_muon_px', 'leading_muon_py', 'leading_muon_pz', 'leading_muon_KE',
+            'total_proton_px', 'total_proton_py', 'total_proton_pz', 'total_proton_KE',
+        ],
+        'reweight_variables': ['total_proton_KE', 'leading_muon_py', 'leading_muon_pz', 'psi_prime'],
+        'particle_names': ['total_proton'],
+        'drawing_variables': ['total_proton_KE', 'leading_muon_py', 'leading_muon_pz', 'weight'],
+    },
+    '2p0n': {
+        'particle_counts': {'muon': '==1', 'proton': '==0', 'neutron': '==0'},
+        'variable_exprs': [
+            'Enu_true', 'Q2', 'q0', 'q3', 'W',
+            'leading_muon_px', 'leading_muon_py', 'leading_muon_pz', 'leading_muon_KE',
+            'total_proton_px', 'total_proton_py', 'total_proton_pz', 'total_proton_KE',
+        ],
+        'reweight_variables': ['total_proton_KE', 'leading_muon_py', 'leading_muon_pz', 'psi_prime'],
+        'particle_names': ['total_proton'],
+        'drawing_variables': ['total_proton_KE', 'leading_muon_py', 'leading_muon_pz', 'weight'],
+    },
+    '2pNn': {
+        'particle_counts': {'muon': '==1', 'proton': '==0', 'neutron': '==0'},
+        'variable_exprs': [
+            'Enu_true', 'Q2', 'q0', 'q3', 'W',
+            'leading_muon_px', 'leading_muon_py', 'leading_muon_pz', 'leading_muon_KE',
+            'total_proton_px', 'total_proton_py', 'total_proton_pz', 'total_proton_KE',
+        ],
+        'reweight_variables': ['total_proton_KE', 'leading_muon_py', 'leading_muon_pz'],
+        'particle_names': ['total_proton'],
+        'drawing_variables': ['total_proton_KE', 'leading_muon_py', 'leading_muon_pz', 'weight'],
+    },
+    'others': {
+        'particle_counts': {'muon': '==1', 'proton': '==0', 'neutron': '==0'},
+        'variable_exprs': [
+            'Enu_true', 'Q2', 'q0', 'q3', 'W',
+            'leading_muon_px', 'leading_muon_py', 'leading_muon_pz', 'leading_muon_KE',
+            'total_proton_px', 'total_proton_py', 'total_proton_pz', 'total_proton_KE',
+        ],
+        'reweight_variables': ['total_proton_KE', 'leading_muon_py', 'leading_muon_pz', 'psi_prime'],
+        'particle_names': ['total_proton'],
+        'drawing_variables': ['total_proton_KE', 'leading_muon_py', 'leading_muon_pz', 'weight'],
+    },
+}
 
 
 def compute_psi_prime(q0, q3_mag, k_f=K_F_GEV, e_shift=E_SHIFT_GEV):
@@ -138,8 +228,8 @@ def save_mean_vs_slice_plot(
     reweighted_means = np.asarray(reweighted_means, dtype=float)
 
     ax_main.plot(x_centers, source_means, 'o-', label='Source', color='tab:green')
-    ax_main.plot(x_centers, target_means, 'o-', label='Target', color='tab:blue')
-    ax_main.plot(x_centers, reweighted_means, 'o-', label='Source (Reweighted)', color='tab:red')
+    ax_main.plot(x_centers, target_means, 'o-', label='Target', color='tab:red')
+    ax_main.plot(x_centers, reweighted_means, 'o-', label='Source (Reweighted)', color='tab:blue')
     ax_main.set_ylabel(r'Mean $\psi^\prime$')
     ax_main.legend(loc='best')
     ax_main.grid(True, alpha=0.3)
@@ -212,7 +302,7 @@ def save_psi_prime_slice_plot(
         source_weights=source_weights_slice,
         target_weights=target_weights_slice,
         new_source_weights=new_source_weights_slice,
-        legends=['Source', 'Target', 'Source (Reweighted)'],
+        legends=['Source', 'Source (Reweighted)', 'Target'],
         variable_bins={'psi_prime': PSI_PRIME_BIN_EDGES},
     )
 
@@ -226,6 +316,10 @@ def save_psi_prime_slice_plot(
     print(f"Saved psi-prime slice plot to {output_name}")
     plt.close()
 
+
+# HERE STARTS THE MAIN FUNCTION
+
+
 # arguments parser
 p = argparse.ArgumentParser(description='Train BDT reweighter by reaction channel.')
 p.add_argument('--source_path', '-s', type=str, help='Path to the source model ROOT file.')
@@ -236,6 +330,7 @@ p.add_argument('--build_tree_of_weights',action='store_true', help='Activate bui
 p.add_argument('--shape_only', action='store_true', help='Only reweight shape, do not change total cross section')
 p.add_argument('--max_events', type=int, default=None, help='Maximum number of events to use for training (for both source and target).')
 p.add_argument('--plots_dir', type=str, default=None, help='Full output directory for plots. If set, this path is used directly.')
+p.add_argument('--category', type=str, default='0p0n', help='Reaction category to train on (e.g. 0p0n, 1p0n, etc.).')
 
 build_tree_of_weights = False
 
@@ -254,7 +349,6 @@ if args.module_path:
 # source_path = '/Users/lorenzo/cernbox/MINERVA_MC/source/ReweightSourceCCQELike_minervame1L.root'
 # source_path = '/Users/lorenzo/cernbox/MINERVA_MC/source/minervame1L_for_rwg.root'
 # source_path = '/eos/user/l/lgiannes/MINERVA_MC/source/minervame1L_for_rwg.root'
-
 # source_path = '/Users/lorenzo/cernbox/MINERVA_MC/source/ReweightSourceCCQELike_minervame1M.root'
 
 if args.model_name:
@@ -264,7 +358,7 @@ else:
     target_model_name = re.search(r'MINERvAflux_([^_]+)_', target_model_name).group(1)
     if target_model_name is None:
         print("CAN'T IDENTIFY TARGET MODEL NAME! ABORT!")
-        exit
+        exit()
 
 print(f'Reweighting to target model: {target_model_name}')
 
@@ -313,13 +407,20 @@ for topology in topologies.values():
     source_test[topology] = source_train[topology].iloc[np.arange(0, int(len(source_train[topology])/7.53),1)].copy()
     source_total[topology] = source_train[topology]
 
-
+# Load the target tree to compute the total cross section.
+tree_target_train = NuisanceFlatTree(target_path)
+# if 'neut_MINERvAflux_EDRMF_nu_all_NUISFLAT_' in target_path:
+    # target_is_from_hadded = True
+target_is_from_hadded = False
+# this is a bit silly: since I did hadd on nuisance flat trees, the total xsec is multiplied by the number of files I hadded (10)
+target_ccqelike_xsec = tree_target_train.get_total_xsec()
+if target_is_from_hadded:
+    target_ccqelike_xsec /= 10 # divide by the number of files I hadded to get the correct total xsec for the target model (weird NUISANCE behavior...)
 if args.max_events is not None:
     print(f"Limiting number of events to {args.max_events} for both source and target.")
     # cut all numpy arrays in the NuisanceFlatTree to max_events
     tree_target_train = NuisanceFlatTree(target_path, max_events=args.max_events)
-else:
-    tree_target_train = NuisanceFlatTree(target_path)
+
 
 target_train = {}
 target_test = {}
@@ -330,6 +431,45 @@ scale_source_train = 1 # 2.489225788674492e-44
 # The following factor is used to set the total xsec.
 # It should be the ratio between the total xsec predicted by the target model over that predicted by the source model. (σ_target / σ_source)
 scale_target_train = 1 # 1.84e-43
+
+# Quick overview plot: event counts per category for source and target before any further processing.
+category_order = list(CATEGORY_CONFIGS.keys())
+source_counts = [int(np.sum(tree_source_train['topology'] == cat)) for cat in category_order]
+target_counts = []
+for cat in category_order:
+    pc = CATEGORY_CONFIGS[cat]['particle_counts']
+    mask = np.asarray(tree_target_train.get_mask_topology(particle_counts=pc, KE_thresholds=KE_thresholds), dtype=bool)
+    target_counts.append(int(np.sum(mask)))
+
+x = np.arange(len(category_order))
+width = 0.4
+fig, ax = plt.subplots(figsize=(8, 5), dpi=200)
+ax.bar(x - width/2, source_counts, width, label='Source', color='tab:green', alpha=0.7)
+ax.bar(x + width/2, target_counts, width, label='Target', color='tab:blue', alpha=0.7)
+ax.set_xticks(x)
+ax.set_xticklabels(category_order, rotation=30, ha='right')
+ax.set_ylabel('Events')
+ax.set_title('Event counts per category (pre-selection)')
+ax.legend()
+ax.grid(axis='y', alpha=0.2)
+
+for i, count in enumerate(source_counts):
+    ax.text(x[i] - width/2, count, f"{count}", ha='center', va='bottom', fontsize=8, color='tab:green')
+for i, count in enumerate(target_counts):
+    ax.text(x[i] + width/2, count, f"{count}", ha='center', va='bottom', fontsize=8, color='tab:blue')
+
+category_plot_name = f"{pics_folder_name}category_counts_source_target.png"
+fig.tight_layout()
+fig.savefig(category_plot_name)
+print(f"Saved category count plot to {category_plot_name}")
+plt.close(fig)
+
+# Drop target events with zero proton kinetic energy to avoid unphysical entries in training.
+target_rows_before = tree_target_train.get_n_entries()
+positive_recoil_mask = np.asarray(tree_target_train.get_mask_positive_recoil_energy(), dtype=bool)
+tree_target_train.update_tree_with_mask(positive_recoil_mask)
+removed_zero_ke = target_rows_before - tree_target_train.get_n_entries()
+print(f"Removed {removed_zero_ke} target events with positive negative recoil energy")
 
 # extract cross section from source model file
 source_file = ROOT.TFile(source_path)
@@ -342,35 +482,50 @@ source_total_xsec = h_xsec_total.GetBinContent(1)
 # xsec is just the bin content of the histogram (only one bin)
 print(f"Total xsec from source model: {source_total_xsec*1e38:.2f} x 10^-38 cm^2")
 print(f"Total CCQELike xsec from source model: {source_ccqelike_xsec*1e38:.2f} x 10^-38 cm^2")
-
-# if 'neut_MINERvAflux_EDRMF_nu_all_NUISFLAT_' in target_path:
-    # target_is_from_hadded = True
-target_is_from_hadded = False
-# this is a bit silly: since I did hadd on nuisance flat trees, the total xsec is multiplied by the number of files I hadded (10)
-target_ccqelike_xsec = tree_target_train.get_total_xsec()
-if target_is_from_hadded:
-    target_ccqelike_xsec /= 10 # divide by the number of files I hadded to get the correct total xsec for the target model (weird NUISANCE behavior...)
 print(f"Total CCQELike xsec from target model: {target_ccqelike_xsec*1e38:.2f} x 10^-38 cm^2")
 
 scale_target_train = target_ccqelike_xsec / source_ccqelike_xsec
 
-if args.shape_only or args.max_events is not None:
+
+# # Test setup: keep all QE events, plus exactly one 2p2h (Mode==2) and one Oth (Mode>2) if they exist.
+# mode_arr = tree_target_train.get_mode()
+# qe_mask = mode_arr == 1
+# two_p2h_indices = np.where(mode_arr == 2)[0]
+# oth_indices = np.where(mode_arr > 2)[0]
+
+# keep_indices = list(np.where(qe_mask)[0])
+# if len(two_p2h_indices) > 0:
+#     keep_indices.append(int(two_p2h_indices[0]))
+# if len(oth_indices) > 0:
+#     keep_indices.append(int(oth_indices[0]))
+
+# keep_indices = np.array(sorted(set(keep_indices)), dtype=int)
+# mask_keep = np.full(len(mode_arr), False)
+# mask_keep[keep_indices] = True
+
+# tree_target_train.update_tree_with_mask(mask_keep)
+# tree_target_train._total_xsec = np.sum(tree_target_train._flattree_vars['fScaleFactor'])
+# print(
+#     f"QE+1(2p2h)+1(Oth) test active: kept {len(keep_indices)} events (QE={np.sum(qe_mask)}, "
+#     f"2p2h_kept={len(two_p2h_indices)>0}, Oth_kept={len(oth_indices)>0})"
+# )
+
+
+if args.shape_only:
     print('Ignoring total cross section and modifying only shape')
     scale_target_train = 1.0
 
 # Category name:
-category = '0p0n'
-particle_counts = {'muon':'==1', 'proton':'==0', 'neutron':'==0'}
-variable_exprs = [
-    'Enu_true', 'Q2', 'q0', 'q3', 'W',
-    'leading_muon_px', 'leading_muon_py', 'leading_muon_pz', 'leading_muon_KE',
-    'total_proton_px', 'total_proton_py', 'total_proton_pz', 'total_proton_KE',
-]
-# reweight_variables=['total_proton_px','total_proton_py','total_proton_pz','total_proton_KE','leading_muon_py','leading_muon_pz']
-reweight_variables=['total_proton_KE','leading_muon_py','leading_muon_pz']
-# drawing_variables = ['total_proton_px','total_proton_py','total_proton_pz','total_proton_KE','leading_muon_py','leading_muon_pz', 'weight']
-drawing_variables = ['total_proton_KE','leading_muon_py','leading_muon_pz', 'weight']
-particle_names = ['total_proton']
+category = args.category
+
+if category not in CATEGORY_CONFIGS:
+    raise ValueError(f"Unknown category '{category}'. Available: {list(CATEGORY_CONFIGS.keys())}")
+
+particle_counts = CATEGORY_CONFIGS[category]['particle_counts']
+variable_exprs = CATEGORY_CONFIGS[category]['variable_exprs']
+reweight_variables = CATEGORY_CONFIGS[category]['reweight_variables']
+particle_names = CATEGORY_CONFIGS[category]['particle_names']
+drawing_variables = CATEGORY_CONFIGS[category]['drawing_variables']
 
 source_total = len(source_train[category])
 print("Number of events:")
@@ -389,10 +544,10 @@ source_total_event_rate = scale_source_train * np.sum(source_train[category]['in
 source_qe_event_rate = scale_source_train * np.sum(source_train[category]['init_wgt'][source_train[category]['reactionCode']==1])
 source_2p2h_event_rate = scale_source_train * np.sum(source_train[category]['init_wgt'][source_train[category]['reactionCode']==2])
 source_resdis_event_rate = scale_source_train * np.sum(source_train[category]['init_wgt'][source_train[category]['reactionCode']>2])
-target_total_event_rate = scale_target_train * np.sum(tree_target_train.get_weight())
-target_qe_event_rate = scale_target_train * np.sum(tree_target_train.get_weight()[tree_target_train.get_mode()==1])
-target_2p2h_event_rate = scale_target_train * np.sum(tree_target_train.get_weight()[tree_target_train.get_mode()==2])
-target_resdis_event_rate = scale_target_train * np.sum(tree_target_train.get_weight()[tree_target_train.get_mode()>2])
+target_total_event_rate = scale_target_train * len(tree_target_train._flattree_vars)
+target_qe_event_rate = scale_target_train * np.sum(tree_target_train.get_mode()==1)
+target_2p2h_event_rate = scale_target_train * np.sum(tree_target_train.get_mode()==2)
+target_resdis_event_rate = scale_target_train * np.sum(tree_target_train.get_mode()>2)
 print(f"SOURCE QE event rate:      {source_qe_event_rate:.0f} ({source_qe_event_rate/source_total_event_rate*100:.2f} % )")
 print(f"SOURCE 2p2h event rate:    {source_2p2h_event_rate:.0f} ({source_2p2h_event_rate/source_total_event_rate*100:.2f} % )")
 print(f"SOURCE RES+DIS event rate: {source_resdis_event_rate:.0f} ({source_resdis_event_rate/source_total_event_rate*100:.2f} % )")
@@ -405,7 +560,7 @@ dict_to_tree = {}
 all_source_plot_chunks = []
 all_target_plot_chunks = []
 
-for process in ['2p2h','QE','Oth']:
+for process in ['Oth','2p2h','QE']:
     process_pics_folder = f'{pics_folder_name}{process}/'
     os.makedirs(process_pics_folder, exist_ok=True)
 
@@ -430,9 +585,48 @@ for process in ['2p2h','QE','Oth']:
     target_train[category] = transform_momentum_to_reaction_frame(target_train[category], selector_lepton='leading_muon', particle_names=particle_names)
     target_train[category]['weight'] = scale_target_train
 
+    # check for negative total_proton_KE in target_train and print how many events have it, then drop those events
+    n_negative_ke = np.sum(target_train[category]['total_proton_KE'] < 0)
+    if n_negative_ke > 0:
+        print(f"Warning: found {n_negative_ke} events with negative total_proton_KE in target_train for category {category}. These events will be dropped.")
+        target_train[category] = target_train[category][target_train[category]['total_proton_KE'] >= 0]
+
     source_train_p = source_train[category][source_mask].copy()
-    source_test_p = source_train_p.iloc[np.arange(0, int(len(source_train_p)/10),1)].copy()
     target_train_p = target_train[category].copy()
+
+
+
+    # Build derived variables for training and diagnostics (psi_prime depends on recoil and muon kinematics).
+    source_muon_py = source_train_p['leading_muon_py'].to_numpy()
+    source_muon_pz = source_train_p['leading_muon_pz'].to_numpy()
+    target_muon_py = target_train_p['leading_muon_py'].to_numpy()
+    target_muon_pz = target_train_p['leading_muon_pz'].to_numpy()
+    source_muon_px = np.zeros_like(source_muon_py)
+    target_muon_px = np.zeros_like(target_muon_py)
+
+    source_train_p['muon_pt_gev'] = np.abs(source_muon_py)
+    target_train_p['muon_pt_gev'] = np.abs(target_muon_py)
+
+    source_train_p['recoil_gev'] = np.nan_to_num(source_train_p['total_proton_KE'].to_numpy(), nan=0.0)
+    target_train_p['recoil_gev'] = np.nan_to_num(target_train_p['total_proton_KE'].to_numpy(), nan=0.0)
+    source_train_p['recoil_mev'] = 1000.0 * source_train_p['recoil_gev']
+    target_train_p['recoil_mev'] = 1000.0 * target_train_p['recoil_gev']
+
+    source_train_p['psi_prime'] = get_psi_prime_from_fs_kinematics(
+        recoil_gev=source_train_p['recoil_gev'].to_numpy(),
+        muon_px_beam=source_muon_px,
+        muon_py_beam=source_muon_py,
+        muon_pz_beam=source_muon_pz,
+    )
+    target_train_p['psi_prime'] = get_psi_prime_from_fs_kinematics(
+        recoil_gev=target_train_p['recoil_gev'].to_numpy(),
+        muon_px_beam=target_muon_px,
+        muon_py_beam=target_muon_py,
+        muon_pz_beam=target_muon_pz,
+    )
+
+    # Create test samples after derived columns are present so they include psi_prime.
+    source_test_p = source_train_p.iloc[np.arange(0, int(len(source_train_p)/10),1)].copy()
     target_test_p = target_train_p.copy()
 
     print(f"Source sample shape: {source_train_p[reweight_variables].shape}")
@@ -441,7 +635,7 @@ for process in ['2p2h','QE','Oth']:
     print("Fitting reweighter...")
     reweighter = Reweighter(n_estimators=100, learning_rate=0.4, max_depth=4, min_samples_leaf=30, gb_args={'subsample': 1.0})
     reweighter.fit(original=source_train_p[reweight_variables], target=target_train_p[reweight_variables],
-                   target_weight=target_train_p['weight'],
+                   # target_weight=target_train_p['weight'],
                    # original_weight=None
                    )
 
@@ -481,7 +675,7 @@ for process in ['2p2h','QE','Oth']:
         source_weights = source_train_p['init_wgt'],
         target_weights = target_train_p['weight'],
         new_source_weights = all_weights,
-        legends = ['Source', 'Target', 'Source (Reweighted)'],
+        legends = ['Source', 'Source (Reweighted)', 'Target'],
         # xlabels = [particle_variable_to_latex(var) for var in drawing_variables],
         # ylabels = [diff_xsec_latex_wrt_variable(var) for var in drawing_variables],
         # scale_target = scale_target_train
@@ -498,11 +692,11 @@ for process in ['2p2h','QE','Oth']:
          source_weights = source_train_p['init_wgt'],
          target_weights = target_train_p['weight'],
          new_source_weights = all_weights,
-         legends = ['Source', 'Target', 'Source (Reweighted)'],
+            legends = ['Source', 'Source (Reweighted)', 'Target'],
          # xlabels = [particle_variable_to_latex(var) for var in drawing_variables],
          # ylabels = [diff_xsec_latex_wrt_variable(var) for var in drawing_variables],
          # scale_target = scale_target_train,
-         shape_only = True
+         shape_only = True 
          )
 
     # add gloabal title to the figure
@@ -512,35 +706,7 @@ for process in ['2p2h','QE','Oth']:
     plt.close()
 
     # Build per-event derived variables for psi-prime sliced diagnostics.
-    # In this reaction frame px is zero by construction, so pT is |py|.
-    source_muon_py = source_train_p['leading_muon_py'].to_numpy()
-    source_muon_pz = source_train_p['leading_muon_pz'].to_numpy()
-    target_muon_py = target_train_p['leading_muon_py'].to_numpy()
-    target_muon_pz = target_train_p['leading_muon_pz'].to_numpy()
-    source_muon_px = np.zeros_like(source_muon_py)
-    target_muon_px = np.zeros_like(target_muon_py)
-
-    source_train_p['muon_pt_gev'] = np.abs(source_muon_py)
-    target_train_p['muon_pt_gev'] = np.abs(target_muon_py)
-
-    source_train_p['recoil_gev'] = np.nan_to_num(source_train_p['total_proton_KE'].to_numpy(), nan=0.0)
-    target_train_p['recoil_gev'] = np.nan_to_num(target_train_p['total_proton_KE'].to_numpy(), nan=0.0)
-    source_train_p['recoil_mev'] = 1000.0 * source_train_p['recoil_gev']
-    target_train_p['recoil_mev'] = 1000.0 * target_train_p['recoil_gev']
-
-    source_train_p['psi_prime'] = get_psi_prime_from_fs_kinematics(
-        recoil_gev=source_train_p['recoil_gev'].to_numpy(),
-        muon_px_beam=source_muon_px,
-        muon_py_beam=source_muon_py,
-        muon_pz_beam=source_muon_pz,
-    )
-    target_train_p['psi_prime'] = get_psi_prime_from_fs_kinematics(
-        recoil_gev=target_train_p['recoil_gev'].to_numpy(),
-        muon_px_beam=target_muon_px,
-        muon_py_beam=target_muon_py,
-        muon_pz_beam=target_muon_pz,
-    )
-
+    # (already computed above; just reuse here)
     source_weights_np = source_train_p['init_wgt'].to_numpy()
     target_weights_np = target_train_p['weight'].to_numpy()
 

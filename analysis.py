@@ -49,8 +49,15 @@ def transform_momentum_to_reaction_frame(df : pd.DataFrame, selector_lepton : st
     #______tranform other particles' momenta to reaction frame______
     # take negative of lepton transverse momentum as y-vector
     transverse_plane_y = - df[[f'{selector_lepton}_px', f'{selector_lepton}_py']].values
-    # normalize to get unit y-vector
-    transverse_plane_y = normalize_vectors(transverse_plane_y)
+
+    # guard against zero transverse momentum to avoid NaNs
+    norms = np.linalg.norm(transverse_plane_y, axis=1, keepdims=True)
+    zero_pt = norms[:, 0] == 0
+    safe_norms = np.where(norms == 0, 1.0, norms)
+    transverse_plane_y = transverse_plane_y / safe_norms
+    if np.any(zero_pt):
+        transverse_plane_y[zero_pt] = np.array([0.0, -1.0])
+
     # x-vector is simply y-vector rotated clock wise by 90 degrees
     transverse_plane_x = np.array([-transverse_plane_y[:,1],transverse_plane_y[:,0]]).T
     for particle_name in particle_names:

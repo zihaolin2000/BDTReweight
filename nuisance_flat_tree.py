@@ -67,6 +67,21 @@ class NuisanceFlatTree:
             self._flattree_vars = self._flattree_vars[:max_events]
             self._total_xsec = np.sum(self._flattree_vars['fScaleFactor'])
 
+    def get_n_entries(self) -> int:
+        """
+        Get the number of events in the flat tree.
+
+        Parameters
+        ----------
+        None
+
+        Returns
+        ----------
+        int
+            Number of events in the flat tree.
+        """
+        return len(self._flattree_vars)
+
     def get_tree_array_copy(self) -> ak.highlevel.Array:
         """
         Get a copy of NUISANCE flat tree awkward array.
@@ -81,6 +96,22 @@ class NuisanceFlatTree:
             awkward array of flat tree.
         """
         return ak.copy(self._flattree_vars)
+    
+    def get_tree_array_copy_with_mask(self, mask : ArrayLike) -> ak.highlevel.Array:
+        """
+        Get a copy of NUISANCE flat tree awkward array with mask applied.
+
+        Parameters
+        ----------
+        mask : ArrayLike
+            Masking applied to slef._flattree_vars. 
+
+        Returns
+        ----------
+        ak.Array
+            awkward array of flat tree with mask applied.
+        """
+        return ak.copy(self._flattree_vars[mask])
 
     def get_total_xsec(self) -> float:
         """
@@ -113,6 +144,26 @@ class NuisanceFlatTree:
             Conversion factor from event rate to cross-section.
         """
         return self._flattree_vars['fScaleFactor'][0]
+
+    def get_mask_positive_recoil_energy(self, min_recoil_energy : float = 0.0) -> ArrayLike:
+        """
+        Get the boolean mask for events with recoil energy above a
+        certain threshold.
+
+        Parameters
+        ----------
+        Returns
+        ----------
+        ArrayLike
+            Boolean mask for events with recoil energy above threshold.
+        """
+        recoil_energy = self.get_event_variable('total_proton_KE')
+        # count "Nones" in total_proton_KE
+        print(f"Number of events with None total_proton_KE: {ak.sum(ak.is_none(recoil_energy))}")
+        recoil_energy = ak.fill_none(recoil_energy, 0.0)
+        print(f"Number of events with negative total_proton_KE: {ak.sum(recoil_energy < 0)}")
+
+        return np.asarray(recoil_energy >= min_recoil_energy)
 
     def get_mask_final_state_allowed_pdg(self, pdg_list : list) -> ArrayLike:
         """

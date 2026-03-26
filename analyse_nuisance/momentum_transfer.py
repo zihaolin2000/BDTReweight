@@ -48,12 +48,16 @@ def _compute_kinematics(tree: NuisanceFlatTree, mask=None):
 	recoil = np.nan_to_num(recoil, nan=0.0)
 	omega = recoil + S_RE_GEV
 	q2 = pT * pT + (mu_e - mu_pz + omega) - omega * omega
+	omega_true = _array_from_tree("q0", tree, mask=mask)
+	q2_true = _array_from_tree("Q2", tree, mask=mask)
 
 	return {
 		"pT": pT,
 		"recoil": recoil,
 		"omega": omega,
 		"q2": q2,
+		"omega_true": omega_true,
+		"q2_true": q2_true,
 	}
 
 
@@ -110,6 +114,10 @@ def _build_histograms(kinematics, weights, bins):
 	histograms[("pT", "omega")] = _hist2d_density(kinematics["pT"], kinematics["omega"], bins["pT"], bins["omega"], weights)
 	histograms[("recoil", "q2")] = _hist2d_density(kinematics["recoil"], kinematics["q2"], bins["recoil"], bins["q2"], weights)
 	histograms[("recoil", "omega")] = _hist2d_density(kinematics["recoil"], kinematics["omega"], bins["recoil"], bins["omega"], weights)
+	histograms[("pT","q2_true")] = _hist2d_density(kinematics["pT"], kinematics["q2_true"], bins["pT"], bins["q2_true"], weights)
+	histograms[("pT","omega_true")] = _hist2d_density(kinematics["pT"], kinematics["omega_true"], bins["pT"], bins["omega_true"], weights)
+	histograms[("recoil","q2_true")] = _hist2d_density(kinematics["recoil"], kinematics["q2_true"], bins["recoil"], bins["q2_true"], weights)
+	histograms[("recoil","omega_true")] = _hist2d_density(kinematics["recoil"], kinematics["omega_true"], bins["recoil"], bins["omega_true"], weights)
 	return histograms
 
 
@@ -149,12 +157,16 @@ def main():
 		"q2": _parse_bins(args.q2_bins, DEFAULT_Q2_BINS),
 		"omega": _parse_bins(args.omega_bins, DEFAULT_OMEGA_BINS),
 	}
+	# True kinematics use the same binning as reco variables unless explicitly provided later.
+	bins["q2_true"] = bins["q2"]
+	bins["omega_true"] = bins["omega"]
 
 	datasets = []
 	for path, label in zip(inputs, labels):
 		tree = NuisanceFlatTree(path)
 		mask = tree.get_mask_flagCCQELike() if args.ccqelike else None
 		kin = _compute_kinematics(tree, mask=mask)
+		# print(f"Kinematics dictionary keys for {label}: {list(kin.keys())}")
 		weights = _fetch_weights(tree, args.weight_branch, mask=mask)
 		histograms = _build_histograms(kin, weights, bins)
 		datasets.append({"label": label, "histograms": histograms})
@@ -206,6 +218,54 @@ def main():
 		ylabel=r"$\omega_{reco}$ (GeV)",
 		title=r"Recoil vs $\omega_{reco}$",
 		outpath=outdir / "recoil_vs_omega_contours.png",
+		level_fracs=args.levels,
+	)
+	_plot_contours(
+		datasets,
+		"pT",
+		"q2_true",
+		bins["pT"],
+		bins["q2_true"],
+		xlabel=r"$p_T$ (GeV)",
+		ylabel=r"$Q^2_{true}$ (GeV$^2$)",
+		title=r"$p_T$ vs $Q^2_{true}$",
+		outpath=outdir / "pT_vs_Q2_true_contours.png",
+		level_fracs=args.levels,
+	)
+	_plot_contours(
+		datasets,
+		"pT",
+		"omega_true",
+		bins["pT"],
+		bins["omega_true"],
+		xlabel=r"$p_T$ (GeV)",
+		ylabel=r"$\omega_{true}$ (GeV)",
+		title=r"$p_T$ vs $\omega_{true}$",
+		outpath=outdir / "pT_vs_omega_true_contours.png",
+		level_fracs=args.levels,
+	)
+	_plot_contours(
+		datasets,
+		"recoil",
+		"q2_true",
+		bins["recoil"],
+		bins["q2_true"],
+		xlabel="Recoil (GeV)",
+		ylabel=r"$Q^2_{true}$ (GeV$^2$)",
+		title=r"Recoil vs $Q^2_{true}$",
+		outpath=outdir / "recoil_vs_Q2_true_contours.png",
+		level_fracs=args.levels,
+	)
+	_plot_contours(
+		datasets,
+		"recoil",
+		"omega_true",
+		bins["recoil"],
+		bins["omega_true"],
+		xlabel="Recoil (GeV)",
+		ylabel=r"$\omega_{true}$ (GeV)",
+		title=r"Recoil vs $\omega_{true}$",
+		outpath=outdir / "recoil_vs_omega_true_contours.png",
 		level_fracs=args.levels,
 	)
 
