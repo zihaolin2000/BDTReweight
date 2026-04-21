@@ -255,9 +255,19 @@ def efficiency(cosT : ArrayLike, Tp : ArrayLike):
     return np.minimum(np.maximum((Tp * cosT - 0.060) / 0.060, 0), 1.0)
 
 def MNEff_evaluate(df = None, xybins = (np.linspace(0,0.6,20),np.linspace(0,2,20)), reweight=False, Xsec_columns=('dpt','pT_muon')):
+    # TODO: Change Styling. Add helper info. 
 
     if 'pT_muon' not in df.columns:
         df['pT_muon'] = - df['leading_muon_py']
+    if 'eff' not in df.columns:
+        P_protons = np.array(df[['leading_proton_px', 'leading_proton_py', 'leading_proton_pz']])
+        P_zvector = np.zeros_like(P_protons)
+        P_zvector[:,2] = 1
+        cos_proton = cosine_theta_vectors(P_protons, P_zvector)
+        T_proton = np.sqrt(df['leading_proton_px']**2 + df['leading_proton_py']**2 + df['leading_proton_pz']**2)
+        print('cos_proton', cos_proton)
+        print('T_proton', T_proton)
+        df['eff'] = efficiency(cos_proton, T_proton)
     xcol, ycol = Xsec_columns
     N, dpt_edges, pT_edges = np.histogram2d(df[xcol],df[ycol],bins=xybins,weights=df['weight'])
     N = np.zeros(N.shape)
