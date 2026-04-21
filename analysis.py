@@ -335,7 +335,9 @@ def draw_source_target_distributions_and_ratio(source : pd.DataFrame, target : p
     plt.close()
 
 def draw_2Dxsec_and_efficiency(df_genie2=[],df_genie3=[],xybins=(np.linspace(0,0.6,20),np.linspace(0,2,20)),fScale_genie2=0,fScale_genie3=0,
-               Xsec_columns=('dpt','pT_muon'), xylabels=('$\delta p_T \ (\\text{GeV}/c)$','$p^\mu_T \ (\\text{GeV}/c)$')):
+    # TODO: Change Styling. Add helper info. 
+        xylabels=('$\delta p_T \ (\\text{GeV}/c)$','$p^\mu_T \ (\\text{GeV}/c)$'), figshow : bool = True, Xsec_columns=('dpt','pT_muon'),
+        savepath_xsec : str = None, savepath_ratio : str = None):
     M2, N2, eff2, xedges, yedges, N2err, M2err, R2err = MNEff_evaluate(df=df_genie2,xybins=xybins,reweight=False,Xsec_columns=Xsec_columns)
     M2_rwt, N2_rwt, eff2_rwt, _, _, N2rwt_err, M2rwt_err, R2rwt_err = MNEff_evaluate(df=df_genie2, reweight=True,xybins=xybins,Xsec_columns=Xsec_columns)
     M3, N3, eff3, _, _, N3err, M3err, R3err = MNEff_evaluate(df=df_genie3,xybins=xybins,reweight=False,Xsec_columns=Xsec_columns)
@@ -382,13 +384,9 @@ def draw_2Dxsec_and_efficiency(df_genie2=[],df_genie3=[],xybins=(np.linspace(0,0
         ax.set_yticks(yedges)
         ax.set_yticklabels([f"{edge:.2f}" for edge in yedges])
 
-        # plt.show()
-    plt.tight_layout()
-    # plt.show()
-    
-    
-    
 
+    plt.tight_layout()
+    
         
     datas = [eff2/eff3,eff2_rwt/eff3]
     titles = ['Ratio $\phi_{v2}/\phi_{v3}$','Ratio $\phi_{v2}\'/\phi_{v3}$']
@@ -412,6 +410,13 @@ def draw_2Dxsec_and_efficiency(df_genie2=[],df_genie3=[],xybins=(np.linspace(0,0
     eff2rwt3_ratio = eff2_rwt/eff3
     ratio2rwt3_err = eff2rwt3_ratio * np.sqrt((R2rwt_err/eff2_rwt)**2+(R3err/eff3)**2)
 
+    if figshow == True:
+        plt.show()
+
+    if savepath_xsec is not None:
+        plt.savefig(savepath_xsec)
+
+    plt.close()
 
 
     # new: 2025 July 25 ______________________________________________________________________________________________________
@@ -492,7 +497,7 @@ def draw_2Dxsec_and_efficiency(df_genie2=[],df_genie3=[],xybins=(np.linspace(0,0
 
 
         # add a text line at top left
-        ax.text(0.95, 0.9, f'{round(yedges[i],2)} $\le ~ p^T_\mu ~ <$ {round(yedges[i+1],2)} (GeV/$c$)', fontsize=8,
+        ax.text(0.95, 0.9, f'{round(yedges[i],2)} < $p^T_\mu$ < {round(yedges[i+1],2)} (GeV/c)', fontsize=8,
                 horizontalalignment='right',verticalalignment='top', transform=ax.transAxes)
 
         ax.set_xlim(0,xedges[-1])
@@ -571,7 +576,7 @@ def draw_2Dxsec_and_efficiency(df_genie2=[],df_genie3=[],xybins=(np.linspace(0,0
 
 
         # add a text line at top right
-        ax.text(0.05, 0.9, f'{round(yedges[i],2)} $\le ~ p^T_\mu ~ <$ {round(yedges[i+1],2)} (GeV/$c$)', fontsize=8,
+        ax.text(0.05, 0.9, f'{round(yedges[i],2)} < $p^T_\mu$ < {round(yedges[i+1],2)} (GeV/c)', fontsize=8,
                 horizontalalignment='left',verticalalignment='top', transform=ax.transAxes)
 
         ax.set_xlim(0,xedges[-1])
@@ -621,6 +626,10 @@ def draw_2Dxsec_and_efficiency(df_genie2=[],df_genie3=[],xybins=(np.linspace(0,0
             ax.get_position().height
         ])
 
+    if figshow == True:
+        plt.show()
 
+    if savepath_ratio is not None:
+        plt.savefig(savepath_ratio)
 
-    plt.show()
+    plt.close()
