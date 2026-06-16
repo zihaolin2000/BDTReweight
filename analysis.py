@@ -197,7 +197,8 @@ def draw_source_target_distributions_and_ratio(source : pd.DataFrame, target : p
     figheight = int((n_plots - 1) / 3 + 1)
     fig = plt.figure(figsize=[15, 3 * figheight], dpi=200)
     alpha= 0.5
-    outer_grid = GridSpec(figheight, 3, figure=fig, wspace=0.25, hspace=0.32)
+    outer_grid = GridSpec(figheight, 3, figure=fig, wspace=0.25, hspace=0.32, left=0.05, right=0.95, bottom=0.08, top=0.95)
+
     handles, labels = [], []
     
     # loop through variables and plot
@@ -324,7 +325,7 @@ def draw_source_target_distributions_and_ratio(source : pd.DataFrame, target : p
 
 
     fig.legend(handles, labels, loc='lower center', ncol=5, frameon=False)
-    fig.subplots_adjust(bottom=bottom_adjust)
+    # fig.subplots_adjust(bottom=bottom_adjust)
 
     if figshow == True:
         plt.show()
@@ -334,7 +335,7 @@ def draw_source_target_distributions_and_ratio(source : pd.DataFrame, target : p
 
     plt.close()
 
-def draw_2Dxsec_and_efficiency(df_genie2=[],df_genie3=[],xybins=(np.linspace(0,0.6,20),np.linspace(0,2,20)),fScale_genie2=0,fScale_genie3=0,
+def draw_2Dxsec_and_efficiency(df_genie2=[],df_genie3=[],xybins=(np.linspace(0.0,0.4,15),np.linspace(0.1,1.5,15)),fScale_genie2=1,fScale_genie3=1,
     # TODO: Change Styling. Add helper info. 
         xylabels=('$\delta p_T \ (\\text{GeV}/c)$','$p^\mu_T \ (\\text{GeV}/c)$'), figshow : bool = True, Xsec_columns=('dpt','pT_muon'),
         savepath_xsec : str = None, savepath_ratio : str = None):
@@ -354,25 +355,31 @@ def draw_2Dxsec_and_efficiency(df_genie2=[],df_genie3=[],xybins=(np.linspace(0,0
         ]
     # titles = ['','','','','','','','','']
     xlabel, ylabel = xylabels
-    fig, axs = plt.subplots(nrows=3, ncols=3, figsize=(11, 9),dpi=300)  # 3x3 grid
-    vmax = 1.9e-38
+    fig, axs = plt.subplots(nrows=3, ncols=3, figsize=(16, 13),dpi=300)  # 3x3 grid
+    vmax = 2.2e-38
     for i, (ax, data, title) in enumerate(zip(axs.flat, datas, titles)):
         X, Y = np.meshgrid(xedges, yedges)
         area=(xedges[1]-xedges[0])*(yedges[1]-yedges[0])
         # cmap = LinearSegmentedColormap.from_list("black_white_red", ['black','white','red'], N=256)
         cmap = 'viridis'
+        ax.tick_params(which='both', direction='in', top=True, right=True)
+        ax.minorticks_on()
+
         if i in [0,1]:
             mesh = ax.pcolormesh(X, Y, data.T*fScale_genie2/area, shading='auto', cmap=cmap, vmin=0.0,vmax=vmax)
-
         elif i in [3,4]:
             mesh = ax.pcolormesh(X, Y, data.T*fScale_genie3/area, shading='auto', cmap=cmap,vmin=0.0,vmax=vmax)
         elif i in [6,7]:
             # mesh = ax.pcolormesh(X, Y, data.T*(len(df_genie3)*fScale_genie3/len(df_genie2))/area, shading='auto', cmap='viridis')  # Transpose counts
-            mesh = ax.pcolormesh(X, Y, data.T/area, shading='auto', cmap=cmap,vmin=0.0,vmax=vmax)
+            mesh = ax.pcolormesh(X, Y, data.T*fScale_genie2/area, shading='auto', cmap=cmap,vmin=0.0,vmax=vmax)
+            print(np.max(data.T*fScale_genie2/area))
         else:
             mesh = ax.pcolormesh(X, Y, data.T, shading='auto', cmap=cmap,vmin=0.0,vmax=1.0) # efficiency plot
 
-        cbar = plt.colorbar(mesh, ax=ax)
+        # cbar = plt.colorbar(mesh, ax=ax)
+        fmt = ScalarFormatter(useMathText=True)
+        fmt.set_powerlimits((0, 0))
+        cbar = fig.colorbar(mesh, ax=ax, format=fmt)
         if i in [0,1,3,4,6,7]:
             cbar.set_label('$\\frac{d^2\\sigma}{d\delta p_T d p^T_{\mu}} \ \left(\\frac{\\text{cm}^2}{(\\text{GeV}/c)^2}\\right)$')
         else:
@@ -391,15 +398,7 @@ def draw_2Dxsec_and_efficiency(df_genie2=[],df_genie3=[],xybins=(np.linspace(0,0
     datas = [eff2/eff3,eff2_rwt/eff3]
     titles = ['Ratio $\phi_{v2}/\phi_{v3}$','Ratio $\phi_{v2}\'/\phi_{v3}$']
 
-    # vmin,vmax=(0.0, np.max([datas[0],datas[1]]))
-    # vmin,vmax=(0.0, 3.0)
     vmin,vmax=(0.0, 2.0)
-
-
-    print('vmin, vmax:',vmin,vmax)
-
-        
-
     dpt_bin_centers = 0.5 * (xedges[:-1] + xedges[1:])
     # print('dpt bincenters:',dpt_bin_centers)
     eff23_ratio = eff2/eff3
@@ -420,8 +419,8 @@ def draw_2Dxsec_and_efficiency(df_genie2=[],df_genie3=[],xybins=(np.linspace(0,0
 
 
     # new: 2025 July 25 ______________________________________________________________________________________________________
-    fig = plt.figure(figsize=(10, 8.5), dpi=300)
-    outer = GridSpec(2, 2, figure=fig, hspace=0.3, wspace=0.07)
+    fig = plt.figure(figsize=(15, 14), dpi=300)
+    outer = GridSpec(2, 2, figure=fig, hspace=0.3, wspace=0.07, left=0.05, right=0.97, bottom=0.05, top=0.95)
 
     # Top-left
     ax00 = fig.add_subplot(outer[0, 0])
@@ -438,9 +437,11 @@ def draw_2Dxsec_and_efficiency(df_genie2=[],df_genie3=[],xybins=(np.linspace(0,0
     ax00.set_xlabel(xlabel)
     ax00.set_ylabel(ylabel)
     ax00.set_title(
-        'a.',
-        # 'a. Ratio $\phi_{v2}/\phi_{v3}$',
+        # 'a.',
+        'a. $\phi_{v2}/\phi_{v3}$',
         fontsize=11)
+    ax00.tick_params(which='both', direction='in', top=True, right=True)
+    ax00.minorticks_on()
     ax00.set_yticks(yedges)
     ax00.set_yticklabels([f"{edge:.2f}" for edge in yedges])
 
@@ -455,9 +456,11 @@ def draw_2Dxsec_and_efficiency(df_genie2=[],df_genie3=[],xybins=(np.linspace(0,0
     ax01.set_xlabel(xlabel)
     ax01.set_ylabel(ylabel)
     ax01.set_title(
-        'b.',
-        # 'b. Ratio $\phi_{v2}\'/\phi_{v3}$',
+        # 'b.',
+        'b. $\phi_{v2}\'/\phi_{v3}$',
         fontsize=11)
+    ax01.tick_params(which='both', direction='in', top=True, right=True)
+    ax01.minorticks_on()
     ax01.set_yticks(yedges)
     ax01.set_yticklabels([f"{edge:.2f}" for edge in yedges])
 
@@ -466,9 +469,11 @@ def draw_2Dxsec_and_efficiency(df_genie2=[],df_genie3=[],xybins=(np.linspace(0,0
     half = eff2rwt3_ratio.shape[1]//2
 
     # Bottom-left: nested grid 
-    inner = GridSpecFromSubplotSpec(eff2rwt3_ratio.shape[1]-half, 1, subplot_spec=outer[1, 0], hspace=0.05)
+    inner = GridSpecFromSubplotSpec(eff2rwt3_ratio.shape[1]-half, 1, subplot_spec=outer[1, 0], hspace=0.1)
     for index in range(half,eff2rwt3_ratio.shape[1]):
         ax = fig.add_subplot(inner[index-half])
+        ax.tick_params(which='both', direction='in', top=True, right=True)
+        ax.minorticks_on()
         i = eff2rwt3_ratio.shape[1]-1-index
 
         # draw a line at y=1
@@ -477,47 +482,36 @@ def draw_2Dxsec_and_efficiency(df_genie2=[],df_genie3=[],xybins=(np.linspace(0,0
         ax.axhline(y=0, color='black', linestyle='-',alpha=0.0,label='c.')
 
 
+
         # eff2_rwt/eff3
         slice_counts = eff2rwt3_ratio.T[i, :]
         errors = ratio2rwt3_err.T[i,:]
-
         slice_counts[np.isnan(slice_counts)] = 0
         ax.step(xedges, np.append(slice_counts, slice_counts[-1]), where='post',label='$\phi_{v2}\'/\phi_{v3}$',color='purple',alpha=0.7)
         ax.errorbar(dpt_bin_centers - 0.1*np.diff(xedges), slice_counts, yerr=errors, capsize = 2,fmt='none',color='purple',markersize=2,alpha=0.7)
 
-        yge2 = np.any((slice_counts+errors) >= 2)
-
         # eff2/eff3
         slice_counts = eff23_ratio.T[i, :]
         errors = ratio23_err.T[i,:]
-        #fill nan with zero:
         slice_counts[np.isnan(slice_counts)] = 0
         ax.step(xedges, np.append(slice_counts, slice_counts[-1]), where='post',label='$\phi_{v2}/\phi_{v3}$',color='orange',alpha=0.7)
         ax.errorbar(dpt_bin_centers, slice_counts, yerr=errors,  markersize=2,capsize = 2,fmt='none',color='orange',alpha=0.7)
 
 
         # add a text line at top left
-        ax.text(0.95, 0.9, f'{round(yedges[i],2)} < $p^T_\mu$ < {round(yedges[i+1],2)} (GeV/c)', fontsize=8,
+        ax.text(0.95, 0.9, f'{round(yedges[i],2)} $\leq$ $p^T_\mu$ < {round(yedges[i+1],2)} (GeV/c)', fontsize=8,
                 horizontalalignment='right',verticalalignment='top', transform=ax.transAxes)
 
         ax.set_xlim(0,xedges[-1])
         
-        # yge2 = yge2 or np.any((slice_counts+errors) >= 1.3)
-        # if yge2:
-        #     ax.set_ylim(0.7,None)
-        # else:
-        #     ax.set_ylim(0.7,1.3)
         points = slice_counts+errors
         points[~np.isfinite(points)] = 1.0
         ymax = np.max(points-1)*1.1
 
-        # yrange = max(np.max(points-1),np.max(1-points))*5
-        # ax.set_ylim(1-yrange,1+yrange)
         points = slice_counts-errors
         points[~np.isfinite(points)] = 1.0
         ymin = np.max(1-points)*1.1
-
-        yrange = max(ymin,ymax)
+        yrange = max(ymin,ymax)*1.2
         ax.set_ylim(1-yrange,1+ yrange)
 
         # ax.legend()
@@ -545,9 +539,12 @@ def draw_2Dxsec_and_efficiency(df_genie2=[],df_genie3=[],xybins=(np.linspace(0,0
         ])
 
     # Bottom-right: nested grid 
-    inner = GridSpecFromSubplotSpec(half, 1, subplot_spec=outer[1, 1], hspace=0.05)
+    inner = GridSpecFromSubplotSpec(half, 1, subplot_spec=outer[1, 1], hspace=0.1)
+    
     for index in range(0,half):
         ax = fig.add_subplot(inner[index])
+        ax.tick_params(which='both', direction='in', top=True, right=True)
+        ax.minorticks_on()
         i = eff2rwt3_ratio.shape[1]-1-index
 
         # draw a line at y=1
@@ -576,7 +573,7 @@ def draw_2Dxsec_and_efficiency(df_genie2=[],df_genie3=[],xybins=(np.linspace(0,0
 
 
         # add a text line at top right
-        ax.text(0.05, 0.9, f'{round(yedges[i],2)} < $p^T_\mu$ < {round(yedges[i+1],2)} (GeV/c)', fontsize=8,
+        ax.text(0.05, 0.9, f'{round(yedges[i],2)} $\leq$ $p^T_\mu$ < {round(yedges[i+1],2)} (GeV/c)', fontsize=8,
                 horizontalalignment='left',verticalalignment='top', transform=ax.transAxes)
 
         ax.set_xlim(0,xedges[-1])
@@ -596,7 +593,8 @@ def draw_2Dxsec_and_efficiency(df_genie2=[],df_genie3=[],xybins=(np.linspace(0,0
         points[~np.isfinite(points)] = 1.0
         ymin = np.max(1-points)*1.1
 
-        yrange = max(ymin,ymax)
+        # yrange = max(ymin,ymax)
+        yrange = 0.14
         ax.set_ylim(1-yrange,1+ yrange)        
         
         
@@ -608,15 +606,6 @@ def draw_2Dxsec_and_efficiency(df_genie2=[],df_genie3=[],xybins=(np.linspace(0,0
         if index == half-1:
             ax.set_xlabel(xlabel)
 
-        # ax.set_yticks([0,1])
-        # ax.set_yticklabels([0,1])
-
-
-
-        # if index == 0:
-        #     ax.legend(loc='lower center', bbox_to_anchor=(0.5, 1.0), ncol=3, 
-        #             #   fontsize=20, 
-        #               frameon=False)
         
         bbox = outer[1, 1].get_position(fig)
         ax.set_position([
@@ -630,6 +619,6 @@ def draw_2Dxsec_and_efficiency(df_genie2=[],df_genie3=[],xybins=(np.linspace(0,0
         plt.show()
 
     if savepath_ratio is not None:
-        plt.savefig(savepath_ratio)
+        plt.savefig(savepath_ratio)    
 
     plt.close()
