@@ -13,20 +13,21 @@ print('Imported.')
 train_size = 'train_size_4M'
 
 target_train_magnitude = {
-    '0p0n':9703/4,
-#     '0pNn':26721/4,
-#     '1p0n':141665/4,
-#     '1pNn':72661/4,
-#     '2p0n':45068/4,
-#     '2pNn':47838/4,
-#     'others':60532/4,
-# After q3 2p2h 1.2GeV cut: 
-    '0pNn':26345/4,
-    '1p0n':141274/4,
-    '1pNn':67066/4,
-    '2p0n':37774/4,
-    '2pNn':43309/4,
-    'others':56330/4,
+# # After q3 2p2h 1.2GeV cut: 
+#     '0p0n':9703/4,
+#     '0pNn':26345/4,
+#     '1p0n':141274/4,
+#     '1pNn':67066/4,
+#     '2p0n':37774/4,
+#     '2pNn':43309/4,
+#     'others':56330/4,
+    '0p0n':9668/4,
+    '0pNn':26169/4,
+    '1p0n':140286/4,
+    '1pNn':67587/4,
+    '2p0n':37954/4,
+    '2pNn':43776/4,
+    'others':56028/4,
 }
 # 4M:
 # 0p0n: 0.5855641548628767
@@ -291,7 +292,24 @@ for category in categories:
         means.append(np.mean(ratios))
 
 print('mean ratio:', means)
-if len(means)==7:
-        means = np.array(means)
-        np.savetxt(f'/exp/minerva/data/users/zihaolin/BDTReweighters/saved_reweighters_pickle/{train_size}/CCQELike_MINERvA_GENIEv2_to_v3AR23_topology_normalizations.txt',
-                means, fmt='%.10f')
+# if len(means)==7:
+#         means = np.array(means)
+#         np.savetxt(f'/exp/minerva/data/users/zihaolin/BDTReweighters/saved_reweighters_pickle/{train_size}/CCQELike_MINERvA_GENIEv2_to_v3AR23_topology_normalizations.txt',
+#                 means, fmt='%.10f')
+
+# 2026 Apr 22
+# 0.5365539925
+# 1.0005959101
+# 1.1445891164
+# 1.1078228350
+# 1.3794324434
+# 0.9286398249
+# 0.8346867847
+# ->
+# 0.5847384223002989
+# 0.9679876384095449
+# 1.1410439007300357
+# 1.1136581835907124
+# 1.3760659465071514
+# 0.9371560433394239
+# 0.8318119215069081

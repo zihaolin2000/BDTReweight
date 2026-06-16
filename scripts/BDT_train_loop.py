@@ -42,12 +42,12 @@ tree_source_train._flattree_vars['dpt'] = tree_source_train._flattree_vars['dpt'
 print('Load target MC train sample...')
 tree_target_train = NuisanceFlatTree(
     # # GENEIE v3.04.00 AR23 sample:
-    '/exp/minerva/data/users/zihaolin/MC_outputs/GENIE/GENIEv3_AR23_MINERvA_ME_FHC_numu_C12_NUISFLAT.root',
-    entry_start=0, entry_stop=size
-#     ['/exp/minerva/data/users/zihaolin/MC_outputs/GENIE/GENIEv3_AR23_MINERvA_ME_FHC_numu_C12_500_NUISFLAT.root',
-#     '/exp/minerva/data/users/zihaolin/MC_outputs/GENIE/GENIEv3_AR23_MINERvA_ME_FHC_numu_C12_501_NUISFLAT.root',
-#     '/exp/minerva/data/users/zihaolin/MC_outputs/GENIE/GENIEv3_AR23_MINERvA_ME_FHC_numu_C12_502_NUISFLAT.root',
-#     '/exp/minerva/data/users/zihaolin/MC_outputs/GENIE/GENIEv3_AR23_MINERvA_ME_FHC_numu_C12_503_NUISFLAT.root'],
+#     '/exp/minerva/data/users/zihaolin/MC_outputs/GENIE/GENIEv3_AR23_MINERvA_ME_FHC_numu_C12_NUISFLAT.root',
+#     entry_start=0, entry_stop=size
+    ['/exp/minerva/data/users/zihaolin/MC_outputs/GENIE/GENIEv3_AR23_MINERvA_ME_FHC_numu_C12_500_NUISFLAT.root',
+    '/exp/minerva/data/users/zihaolin/MC_outputs/GENIE/GENIEv3_AR23_MINERvA_ME_FHC_numu_C12_501_NUISFLAT.root',
+    '/exp/minerva/data/users/zihaolin/MC_outputs/GENIE/GENIEv3_AR23_MINERvA_ME_FHC_numu_C12_502_NUISFLAT.root',
+    '/exp/minerva/data/users/zihaolin/MC_outputs/GENIE/GENIEv3_AR23_MINERvA_ME_FHC_numu_C12_503_NUISFLAT.root'],
     # Alternatively, try GENIE v3 G18_10a:
     # '/pnfs/minerva/persistent/Models/GENIE/Medium_Energy/FHC/v3_0_6/tracker/G18_10a_02_11a/CH/flat_GENIE_G18_10a_02_11a_50M.root',
     # Use akward array's kwargs to control sample size
@@ -78,8 +78,9 @@ target_train = {}
 normalizations = {}
 
 categories = ['0p0n', '0pNn', '1p0n', '1pNn', '2p0n', '2pNn', 'others']
-# categories = ['2p0n']
-save_normalization = False
+# categories = ['1p0n']
+
+save_normalization = True
 
 reweight_variables_cat = {
     '0p0n':['total_proton_px','total_proton_py','total_proton_pz',
@@ -164,10 +165,8 @@ particle_counts_cat = {
 
 def reweighter_instance(category):
     if category == '1p0n':
-        # return Reweighter(n_estimators=400,learning_rate=0.1, max_depth=4,min_samples_leaf=30, gb_args={'subsample': 1.0})
         return Reweighter(n_estimators=20,learning_rate=0.1, max_depth=30,min_samples_leaf=30, gb_args={'subsample': 1.0})
-#     elif category == '2p0n':
-#         return Reweighter(n_estimators=70,learning_rate=0.1, max_depth=3,min_samples_leaf=30, gb_args={'subsample': 1.0})
+        # return Reweighter(n_estimators=20,learning_rate=0.1, max_depth=30,min_samples_leaf=30, gb_args={'subsample': 1.0})    
     else:
         return Reweighter(n_estimators=100, learning_rate=0.1, max_depth=4, min_samples_leaf=30, gb_args={'subsample': 1.0})
 
@@ -233,7 +232,27 @@ if save_normalization:
     if len(list(normalizations.values()))==7:
         np.savetxt(f'/exp/minerva/data/users/zihaolin/BDTReweighters/saved_reweighters_pickle/CCQELike_MINERvA_GENIEv2_to_v3AR23_topology_normalizations.txt',
                 np.array(list(normalizations.values())), fmt='%.10f')
-#     with open('/exp/minerva/data/users/zihaolin/BDTReweighters/saved_reweighters_pickle/CCQELike_MINERvA_GENIEv2_to_v3AR23_topology_normalizations.txt', 'w') as f:
-#         for norm in normalizations.values():
-#             f.write(f"{norm}\n")
+# Old:
+# 0.5870056135
+# 0.9794804585
+# 1.1445891164
+# 1.1078228350
+# 1.3794324434
+# 0.9286398249
+# 0.8346867847
+# New: 2026Apr22 newly trained with correct sum(Tp)
+# 0.5365539925
+# 1.0005959101
+# 1.1445891164
+# 1.1078228350
+# 1.3794324434
+# 0.9286398249
+# 0.8346867847
 
+# 0.613445232411505
+# 0.999158205196234 
+# 1.941302495328724 
+# 1.126438693087540 
+# 1.447448505905203
+# 0.952486093824002 
+# 0.846882632240291
