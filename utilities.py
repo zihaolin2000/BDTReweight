@@ -236,10 +236,11 @@ def cosine_theta_vectors(v1s : np.ndarray, v2s : np.ndarray) -> ArrayLike:
     """
     return np.sum(normalize_vectors(v1s) * normalize_vectors(v2s), axis = 1)
 
-def efficiency(cosT : ArrayLike, Tp : ArrayLike):
+def toy_efficiency(cosT : ArrayLike, Tp : ArrayLike):
     """
-    Return toy model efficiency values for given proton cosine(theta), cosT, and
-    kinetic energy, Tp, see arxiv.org/abs/2510.07463.
+    Return toy model efficiency values for given proton cosine(theta), cosT,
+    and kinetic energy, Tp, see arxiv.org/abs/2510.07463. Operated along tuple
+    axis = 1. 
 
     Parameters
     ----------
@@ -252,9 +253,11 @@ def efficiency(cosT : ArrayLike, Tp : ArrayLike):
     ----------
     np.array
     """
-    return np.minimum(np.maximum((Tp * cosT - 0.060) / 0.060, 0), 1.0)
+    operands = np.array([(Tp * cosT - 0.060) / 0.060, np.zeros(len(Tp))]).T
+    maxes = np.max(operands, axis = 1)
+    return np.min(np.array([maxes, np.ones(len(maxes))]).T, axis = 1)
 
-def MNEff_evaluate(df = None, xybins = (np.linspace(0,0.6,20),np.linspace(0,2,20)), reweight=False, Xsec_columns=('dpt','pT_muon')):
+def MNEff_evaluate(df = None, xybins = (np.linspace(0.0,0.4,15),np.linspace(0.1,1.5,15)), reweight=False, Xsec_columns=('dpt','pT_muon')):
     # TODO: Change Styling. Add helper info. 
 
     if 'pT_muon' not in df.columns:
@@ -264,10 +267,9 @@ def MNEff_evaluate(df = None, xybins = (np.linspace(0,0.6,20),np.linspace(0,2,20
         P_zvector = np.zeros_like(P_protons)
         P_zvector[:,2] = 1
         cos_proton = cosine_theta_vectors(P_protons, P_zvector)
-        T_proton = np.sqrt(df['leading_proton_px']**2 + df['leading_proton_py']**2 + df['leading_proton_pz']**2)
-        print('cos_proton', cos_proton)
-        print('T_proton', T_proton)
-        df['eff'] = efficiency(cos_proton, T_proton)
+        # T_proton = np.sqrt(df['leading_proton_px']**2 + df['leading_proton_py']**2 + df['leading_proton_pz']**2)
+        T_proton = np.array(df['leading_proton_KE'])
+        df['eff'] = toy_efficiency(cos_proton, T_proton)
     xcol, ycol = Xsec_columns
     N, dpt_edges, pT_edges = np.histogram2d(df[xcol],df[ycol],bins=xybins,weights=df['weight'])
     N = np.zeros(N.shape)
@@ -299,7 +301,7 @@ def MNEff_evaluate(df = None, xybins = (np.linspace(0,0.6,20),np.linspace(0,2,20
             Rerr[i,j] = R[i,j]*np.sqrt(
                 (Nerr[i,j]/N[i,j])**2
                 +(Merr[i,j]/M[i,j])**2
-                -2*cov/(N[i,j]*M[i,j])
+                - 2*cov/(N[i,j]*M[i,j])
             )
 
     return M, N, R, dpt_edges, pT_edges, Nerr, Merr, Rerr
