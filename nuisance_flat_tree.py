@@ -335,7 +335,7 @@ class NuisanceFlatTree:
             Selector options: 'leading','subleading','total'
             Particle options: 'muon','electron','proton','neutron',
                 'photon','pip','pim','pi0'
-            Variable options: 'px','py','pz','E','KE',
+            Variable options: 'px','py','pz','E','KE', 'theta',
                 'pxvert','pyvert','pzvert','Evert','KEvert'
                 where postfix "vert" means pre FSI values at
                 interaction vertex (excluding initial particles).
@@ -393,7 +393,7 @@ class NuisanceFlatTree:
                 raise ValueError(f'Selector not registered: {selector}')
             if particle not in ['muon', 'electron', 'proton', 'neutron', 'photon', 'pip', 'pim', 'pi0']:
                 raise ValueError(f'Particle not registered: {particle}')
-            if variable not in ['px', 'py', 'pz', 'E', 'KE', 'pxvert', 'pyvert', 'pzvert', 'Evert', 'KEvert']:
+            if variable not in ['px', 'py', 'pz', 'E', 'KE', 'theta', 'pxvert', 'pyvert', 'pzvert', 'Evert', 'KEvert']:
                 raise ValueError(f'Variable not registered: {variable}')
 
             # create particle mask by matching pdg or pdg_vert
@@ -414,6 +414,16 @@ class NuisanceFlatTree:
                     # sort E to find the index of leading particle
                     leading_idx = ak.argmax(self._flattree_vars[mask]['E'][is_particle], axis=1, keepdims=True)
                     selected = ak.firsts(self._flattree_vars[mask][variable][is_particle][leading_idx])
+                elif variable == 'theta':
+                    leading_idx = ak.argmax(self._flattree_vars[mask]['E'][is_particle], axis=1, keepdims=True)
+                    px = ak.firsts(self._flattree_vars[mask]['px'][is_particle][leading_idx])
+                    py = ak.firsts(self._flattree_vars[mask]['py'][is_particle][leading_idx])
+                    pz = ak.firsts(self._flattree_vars[mask]['pz'][is_particle][leading_idx])
+                    P = np.array([px, py, pz]).T
+                    z_vec = np.zeros_like(P)
+                    z_vec[:,2] = 1
+                    costheta = cosine_theta_vectors(P, z_vec)
+                    selected = np.arccos(costheta)
                 elif variable == 'Evert':
                     selected = ak.max(self._flattree_vars[mask]['E_vert'][is_particle], axis=1)
                 elif variable == 'KEvert':
@@ -440,6 +450,15 @@ class NuisanceFlatTree:
                     selected = ak.pad_none(self._flattree_vars[mask]['E'][is_particle][order],2)[:,1] - particle_mass_lookup(particle)
                 elif variable in ['E', 'px', 'py', 'pz']:
                     selected = ak.pad_none(self._flattree_vars[mask][variable][is_particle][order],2)[:,1]
+                elif variable == 'theta':
+                    px = ak.pad_none(self._flattree_vars[mask]['px'][is_particle][order],2)[:,1]
+                    py = ak.pad_none(self._flattree_vars[mask]['py'][is_particle][order],2)[:,1]
+                    pz = ak.pad_none(self._flattree_vars[mask]['pz'][is_particle][order],2)[:,1]
+                    P = np.array([px, py, pz]).T
+                    z_vec = np.zeros_like(P)
+                    z_vec[:,2] = 1
+                    costheta = cosine_theta_vectors(P, z_vec)
+                    selected = np.arccos(costheta)
                 elif variable == 'KEvert':
                     selected = ak.pad_none(self._flattree_vars[mask]['E_vert'][is_particle][order],2)[:,1] - particle_mass_lookup(particle)
                 elif variable == 'Evert':
@@ -456,12 +475,14 @@ class NuisanceFlatTree:
                 if variable == 'KE':
                     # subtract mass * no. of particle from total E
                     selected = ak.sum(self._flattree_vars[mask]['E'][is_particle], axis=1, mask_identity=True) - particle_mass_lookup(particle)*ak.sum(is_particle, axis=1)
+                    selected = ak.where(selected < 1e-8, 0.0, selected) # avoid negative
                 elif variable in ['E', 'px', 'py', 'pz']:
                     selected = ak.sum(self._flattree_vars[mask][variable][is_particle], axis=1, mask_identity=True)
                 elif variable == 'Evert':
                     selected = ak.sum(self._flattree_vars[mask]['E_vert'][is_particle], axis=1, mask_identity=True)
                 elif variable == 'KEvert':
                     selected = ak.sum(self._flattree_vars[mask]['E_vert'][is_particle], axis=1, mask_identity=True) - particle_mass_lookup(particle)*ak.sum(is_particle, axis=1)
+                    selected = ak.where(selected < 1e-8, 0.0, selected) # avoid negative
                 elif variable == 'pxvert':
                     selected = ak.sum(self._flattree_vars[mask]['px_vert'][is_particle], axis=1, mask_identity=True)
                 elif variable == 'pyvert':
