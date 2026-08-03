@@ -223,7 +223,9 @@ class NuisanceFlatTree:
         ArrayLike
             int indices of mask.
         """
-        indices_1p0n = self.mask_to_indices((self.get_mask_topology({'muon':'==1','proton':'==1','neutron':'==0'})) & (self._flattree_vars['tgta'] > 2))
+        # indices_1p0n = self.mask_to_indices((self.get_mask_topology({'muon':'==1','proton':'==1','neutron':'==0'})) & (self._flattree_vars['tgta'] > 2))
+        # FIXME: require Mode to be 1 (elastic) for these FSI bug events
+        indices_1p0n = self.mask_to_indices((self.get_mask_topology({'muon':'==1','proton':'==1','neutron':'==0'})) & (self._flattree_vars['tgta'] > 2) & (self._flattree_vars['Mode'] == 1))
         arr = self.get_tree_array_copy()
         arr = arr[indices_1p0n]
 
