@@ -115,6 +115,8 @@ def particle_variable_to_latex(expr : str, add_unit : bool = True) -> str:
             latex = f'{particle} ${variable_symbol}$'
     elif selector == 'total':
         latex = '$\sum_{\\text{' + particle + '}}$ ${' + variable_symbol + '}$'
+    elif selector in ['init']:
+        latex = f'{particle} ${variable_symbol}$'
     unit = f' $\left({VARIABLE_UNIT[variable]}\\right)$' if (add_unit is True and variable in VARIABLE_UNIT.keys()) else ''
     return latex + unit
 
