@@ -31,8 +31,9 @@ from __future__ import annotations
 
 import json
 import math
+import operator
 from pathlib import Path
-from typing import Any, Mapping, Sequence
+from typing import Any, Mapping, NamedTuple
 
 import numpy as np
 from numpy.typing import ArrayLike, NDArray
@@ -47,6 +48,17 @@ __all__ = [
 
 MODEL_FORMAT = "hep_ml_gb_reweighter"
 FORMAT_VERSION = 1
+DEFAULT_CHUNK_SIZE = 262_144
+
+
+class _CompiledTree(NamedTuple):
+    """Dense, typed arrays used by the inference hot path."""
+
+    feature: NDArray[np.int32]
+    threshold: NDArray[np.float64]
+    children_left: NDArray[np.int32]
+    children_right: NDArray[np.int32]
+    leaf_value: NDArray[np.float64]
 
 
 def _as_path(path: str | Path) -> Path:
@@ -295,6 +307,7 @@ class JSONReweighter:
         self.learning_rate = float(self._model["learning_rate"])
         self.initial_step = float(self._model["initial_step"])
         self._trees: list[dict[str, Any]] = list(self._model["trees"])
+        self._compiled_trees = self._compile_trees()
 
     @classmethod
     def load(cls, filepath: str | Path) -> "JSONReweighter":
@@ -499,11 +512,55 @@ class JSONReweighter:
                         "itself as a child."
                     )
 
+    def _compile_trees(self) -> tuple[_CompiledTree, ...]:
+        """Compile mapping-heavy JSON nodes into cache-friendly arrays."""
+        compiled_trees: list[_CompiledTree] = []
+
+        for tree in self._trees:
+            nodes = tree["nodes"]
+            node_count = int(tree["node_count"])
+
+            feature = np.full(node_count, -1, dtype=np.int32)
+            threshold = np.zeros(node_count, dtype=np.float64)
+            children_left = np.full(node_count, -1, dtype=np.int32)
+            children_right = np.full(node_count, -1, dtype=np.int32)
+            leaf_value = np.zeros(node_count, dtype=np.float64)
+
+            for node_id, node in enumerate(nodes):
+                if bool(node["is_leaf"]):
+                    leaf_value[node_id] = float(node["value"])
+                else:
+                    feature[node_id] = int(node["feature"])
+                    threshold[node_id] = float(node["threshold"])
+                    children_left[node_id] = int(node["left"])
+                    children_right[node_id] = int(node["right"])
+
+            for array in (
+                feature,
+                threshold,
+                children_left,
+                children_right,
+                leaf_value,
+            ):
+                array.flags.writeable = False
+
+            compiled_trees.append(
+                _CompiledTree(
+                    feature=feature,
+                    threshold=threshold,
+                    children_left=children_left,
+                    children_right=children_right,
+                    leaf_value=leaf_value,
+                )
+            )
+
+        return tuple(compiled_trees)
+
     def _prepare_events(
         self,
         events: ArrayLike,
-    ) -> NDArray[np.float64]:
-        """Validate and return a two-dimensional event matrix."""
+    ) -> NDArray[Any]:
+        """Validate the shape and return a two-dimensional event matrix."""
         array = np.asarray(events)
 
         if array.ndim == 1:
@@ -521,56 +578,111 @@ class JSONReweighter:
                 f"input has {array.shape[1]}."
             )
 
+        return array
+
+    @staticmethod
+    def _prepare_chunk(
+        event_chunk: NDArray[Any],
+        row_offset: int,
+    ) -> NDArray[np.float32]:
+        """Validate and convert one inference chunk to float32."""
         try:
-            array = np.asarray(array, dtype=np.float64)
+            numeric_chunk = np.asarray(event_chunk, dtype=np.float64)
         except (TypeError, ValueError) as error:
             raise ValueError(
                 "Input features must be convertible to floating point."
             ) from error
 
-        non_finite = np.argwhere(~np.isfinite(array))
-        if non_finite.size:
-            row, column = map(int, non_finite[0])
+        finite = np.isfinite(numeric_chunk)
+        if not np.all(finite):
+            flat_index = int(np.flatnonzero(~finite)[0])
+            row, column = divmod(flat_index, numeric_chunk.shape[1])
             raise ValueError(
-                f"Non-finite feature at row {row}, column {column}: "
-                f"{array[row, column]!r}."
+                f"Non-finite feature at row {row + row_offset}, "
+                f"column {column}: {numeric_chunk[row, column]!r}."
             )
 
-        return array
+        # Values are intentionally converted before traversal. This matches
+        # scikit-learn, which traverses float32 inputs against float64 splits.
+        with np.errstate(over="ignore"):
+            return np.asarray(numeric_chunk, dtype=np.float32)
 
     @staticmethod
-    def _evaluate_tree(
-        tree: Mapping[str, Any],
-        event: NDArray[np.float64],
-    ) -> float:
+    def _evaluate_tree_batch(
+        tree: _CompiledTree,
+        event_matrix: NDArray[np.float32],
+        row_ids: NDArray[np.intp],
+        node_ids: NDArray[np.int32],
+    ) -> NDArray[np.float64]:
         """
-        Evaluate one tree for one event.
+        Evaluate one tree for a batch of events.
 
-        The selected feature is converted to float32 while the split
-        threshold remains float64, matching the behavior verified
-        against scikit-learn's tree traversal.
+        Only tree depth is traversed in Python. Each step routes every active
+        event with NumPy advanced indexing, eliminating the Python loop over
+        events used by the original evaluator.
         """
-        nodes = tree["nodes"]
+        node_ids.fill(0)
+        active_rows = row_ids
+
+        # A valid acyclic binary tree reaches a leaf in at most node_count
+        # steps. The bound also prevents malformed multi-node cycles from
+        # hanging inference indefinitely.
+        for _ in range(tree.feature.size):
+            active_nodes = node_ids[active_rows]
+            active_features = tree.feature[active_nodes]
+            is_split = active_features >= 0
+            split_count = int(np.count_nonzero(is_split))
+
+            if split_count == 0:
+                return tree.leaf_value[node_ids]
+
+            if split_count != is_split.size:
+                active_rows = active_rows[is_split]
+                active_nodes = active_nodes[is_split]
+                active_features = active_features[is_split]
+
+            feature_values = event_matrix[active_rows, active_features]
+            go_left = feature_values <= tree.threshold[active_nodes]
+
+            node_ids[active_rows] = np.where(
+                go_left,
+                tree.children_left[active_nodes],
+                tree.children_right[active_nodes],
+            )
+
+        raise RuntimeError(
+            "Tree traversal did not reach a leaf; the model may contain "
+            "a cycle."
+        )
+
+    @staticmethod
+    def _evaluate_tree_single(
+        tree: _CompiledTree,
+        event: NDArray[np.float32],
+    ) -> float:
+        """Evaluate one compiled tree without batch-allocation overhead."""
         node_id = 0
 
-        while True:
-            node = nodes[node_id]
+        for _ in range(tree.feature.size):
+            feature_index = int(tree.feature[node_id])
+            if feature_index < 0:
+                return float(tree.leaf_value[node_id])
 
-            if bool(node["is_leaf"]):
-                return float(node["value"])
-
-            feature_index = int(node["feature"])
-            feature_value = np.float32(event[feature_index])
-            threshold = np.float64(node["threshold"])
-
-            if feature_value <= threshold:
-                node_id = int(node["left"])
+            if event[feature_index] <= tree.threshold[node_id]:
+                node_id = int(tree.children_left[node_id])
             else:
-                node_id = int(node["right"])
+                node_id = int(tree.children_right[node_id])
+
+        raise RuntimeError(
+            "Tree traversal did not reach a leaf; the model may contain "
+            "a cycle."
+        )
 
     def decision_function(
         self,
         events: ArrayLike,
+        *,
+        chunk_size: int | None = DEFAULT_CHUNK_SIZE,
     ) -> NDArray[np.float64]:
         """
         Return the ensemble score before exponentiation.
@@ -585,26 +697,55 @@ class JSONReweighter:
         -------
         numpy.ndarray
             One score per input event.
+
+        Other Parameters
+        ----------------
+        chunk_size
+            Maximum events evaluated together. Chunking bounds temporary
+            traversal memory for very large samples. Pass ``None`` to process
+            all events in one batch.
         """
         event_matrix = self._prepare_events(events)
+        n_events = event_matrix.shape[0]
 
-        scores = np.full(
-            event_matrix.shape[0],
-            self.initial_step,
-            dtype=np.float64,
-        )
+        if chunk_size is None:
+            resolved_chunk_size = max(1, n_events)
+        else:
+            if isinstance(chunk_size, (bool, np.bool_)):
+                raise TypeError("chunk_size must be a positive integer or None.")
+            try:
+                resolved_chunk_size = operator.index(chunk_size)
+            except TypeError as error:
+                raise TypeError(
+                    "chunk_size must be a positive integer or None."
+                ) from error
+            if resolved_chunk_size <= 0:
+                raise ValueError("chunk_size must be a positive integer.")
 
-        for tree in self._trees:
-            contributions = np.fromiter(
-                (
-                    self._evaluate_tree(tree, event)
-                    for event in event_matrix
-                ),
+        scores = np.empty(n_events, dtype=np.float64)
+
+        for start in range(0, n_events, resolved_chunk_size):
+            stop = min(start + resolved_chunk_size, n_events)
+            event_chunk = self._prepare_chunk(event_matrix[start:stop], start)
+            chunk_scores = np.full(
+                stop - start,
+                self.initial_step,
                 dtype=np.float64,
-                count=event_matrix.shape[0],
             )
+            row_ids = np.arange(stop - start, dtype=np.intp)
+            node_ids = np.empty(stop - start, dtype=np.int32)
 
-            scores += self.learning_rate * contributions
+            for tree in self._compiled_trees:
+                contributions = self._evaluate_tree_batch(
+                    tree,
+                    event_chunk,
+                    row_ids,
+                    node_ids,
+                )
+                contributions *= self.learning_rate
+                chunk_scores += contributions
+
+            scores[start:stop] = chunk_scores
 
         return scores
 
@@ -612,6 +753,8 @@ class JSONReweighter:
         self,
         events: ArrayLike,
         original_weight: ArrayLike | None = None,
+        *,
+        chunk_size: int | None = DEFAULT_CHUNK_SIZE,
     ) -> NDArray[np.float64]:
         """
         Predict reweighting factors or updated event weights.
@@ -624,6 +767,9 @@ class JSONReweighter:
             Optional scalar or one-dimensional array of existing event
             weights. When omitted, only the learned multiplicative
             reweighting factors are returned.
+        chunk_size
+            Maximum events evaluated together. Pass ``None`` to process all
+            events in one batch.
 
         Returns
         -------
@@ -631,7 +777,8 @@ class JSONReweighter:
             Predicted multiplicative factors, or factors multiplied by
             ``original_weight``.
         """
-        multipliers = np.exp(self.decision_function(events))
+        multipliers = self.decision_function(events, chunk_size=chunk_size)
+        np.exp(multipliers, out=multipliers)
 
         if original_weight is None:
             return multipliers
@@ -641,7 +788,8 @@ class JSONReweighter:
         if weights.ndim == 0:
             if not np.isfinite(weights):
                 raise ValueError("original_weight must be finite.")
-            return multipliers * float(weights)
+            multipliers *= float(weights)
+            return multipliers
 
         if weights.ndim != 1:
             raise ValueError(
@@ -660,7 +808,8 @@ class JSONReweighter:
                 "original_weight contains a non-finite value."
             )
 
-        return multipliers * weights
+        multipliers *= weights
+        return multipliers
 
     def predict_weight_single_event(
         self,
@@ -691,12 +840,31 @@ class JSONReweighter:
                 f"{feature_array.shape}."
             )
 
-        result = self.predict_weights(
-            feature_array,
-            original_weight=original_weight,
-        )
+        if feature_array.shape[0] != self.n_features:
+            raise ValueError(
+                f"Model expects {self.n_features} features, but the "
+                f"input has {feature_array.shape[0]}."
+            )
 
-        return float(result[0])
+        event = self._prepare_chunk(feature_array.reshape(1, -1), 0)[0]
+        score = self.initial_step
+
+        for tree in self._compiled_trees:
+            score += self.learning_rate * self._evaluate_tree_single(
+                tree,
+                event,
+            )
+
+        multiplier = float(np.exp(np.float64(score)))
+
+        if original_weight is None:
+            return multiplier
+
+        weight = float(original_weight)
+        if not math.isfinite(weight):
+            raise ValueError("original_weight must be finite.")
+
+        return multiplier * weight
 
 
 def load_json_reweighter(
