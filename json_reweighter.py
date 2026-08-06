@@ -888,3 +888,37 @@ def load_json_reweighter(
     return JSONReweighter.load(filepath)
 
 
+def prepare_2p2h_reweight_inputs(
+    nucleon1_px: ArrayLike, nucleon1_py: ArrayLike, nucleon1_pz: ArrayLike,
+    nucleon2_px: ArrayLike, nucleon2_py: ArrayLike, nucleon2_pz: ArrayLike,
+    lepton_px: ArrayLike, lepton_py: ArrayLike, lepton_pz: ArrayLike
+) -> NDArray:
+    """
+    Prepare inputs for BDT reweight from SuSAv2 to Valencia exclusive 2p2h.
+    Take lab frame arrays of px, py, pz of final state nucleon1, nucleon2,
+    and lepton of length N.
+    Return array of reaction plane frame array of shape N by 8, where columns
+    are transformed px, py, pz of nucleon1 and nucleon2; py, pz of lepton.
+
+    """
+
+    lepton_pT = np.array([lepton_px, lepton_py]).T
+    lepton_py_new = - np.linalg.norm(lepton_pT, axis=1)
+
+    vector_y = - lepton_pT / (np.linalg.norm(lepton_pT, axis=1)[:,None]) # treat normalized lepton_py_new as -y
+    vector_x = np.array([-vector_y[:,1], vector_y[:,0]]).T # vector x is rotating y clockwise by 90 deg
+    
+    nucleon1_pT = np.array([nucleon1_px, nucleon1_py]).T
+    nucleon1_px_new = np.sum(nucleon1_pT * vector_x, axis = 1)
+    nucleon1_py_new = np.sum(nucleon1_pT * vector_y, axis = 1)
+    
+    nucleon2_pT = np.array([nucleon2_px, nucleon2_py]).T
+    nucleon2_px_new = np.sum(nucleon2_pT * vector_x, axis = 1)
+    nucleon2_py_new = np.sum(nucleon2_pT * vector_y, axis = 1)
+
+
+    return np.array([nucleon1_px_new, nucleon1_py_new, nucleon1_pz,
+                     nucleon2_px_new, nucleon2_py_new, nucleon2_pz,
+                     lepton_py_new, lepton_pz]).T
+
+
