@@ -1,4 +1,5 @@
 import numpy as np
+import uproot
 from numpy.typing import ArrayLike
 
 PARTICLE_PDG = {
@@ -307,3 +308,112 @@ def MNEff_evaluate(df = None, xybins = (np.linspace(0.0,0.4,15),np.linspace(0.1,
             )
 
     return M, N, R, dpt_edges, pT_edges, Nerr, Merr, Rerr
+
+
+def load_flux_hist(file_name : str, hist_name : str, content_is_bin_integral : bool = True):
+    """
+    Load a TH1 histogram with uproot.
+
+    Returns
+    -------
+    centers : np.ndarray
+        Bin centers in GeV.
+    density : np.ndarray
+        Normalized flux density evaluated at the bin centers.
+    edges : np.ndarray
+        Histogram bin edges.
+    """
+    with uproot.open(file_name) as root_file:
+        hist = root_file[hist_name]
+
+        values = hist.values(flow=False).astype(float)
+        edges = hist.axis().edges().astype(float)
+
+    widths = np.diff(edges)
+    centers = 0.5 * (edges[:-1] + edges[1:])
+
+    if np.any(widths <= 0):
+        raise ValueError(f"{hist_name} has non-positive bin widths")
+
+    # Convert integrated bin flux into dPhi/dE.
+    if content_is_bin_integral:
+        density = values / widths
+    else:
+        density = values.copy()
+
+    # Treat the two fluxes as having equal total integrated flux.
+    integral = np.sum(density * widths)
+
+    if not np.isfinite(integral) or integral <= 0:
+        raise ValueError(f"{hist_name} has invalid total flux")
+
+    density /= integral
+
+    return centers, density, edges
+
+def hist_ratio_reweight(
+    xs : ArrayLike,
+    histA_centers : ArrayLike,
+    histA_contents : ArrayLike,
+    histB_centers : ArrayLike,
+    histB_contents : ArrayLike,
+    histB_min=0.0,
+):
+    """
+    Calculate histA(xs) / histB(xs) using linear interpolation.
+
+    Parameters
+    ----------
+    xs : scalar or array-like
+        Histogram variables.
+    min_t2k_flux : float
+        Minimum allowed interpolated T2K flux. Energies below this
+        denominator threshold receive weight zero.
+    """
+    xarr = np.asarray(xs, dtype=float)
+
+    common_min = max(histA_centers[0], histB_centers[0])
+    common_max = min(histA_centers[-1], histB_centers[-1])
+
+    valid = (
+        np.isfinite(xarr)
+        & (xarr >= common_min)
+        & (xarr <= common_max)
+    )
+
+    # left/right=np.nan prevents extrapolation.
+    histA_interp = np.interp(
+        xarr,
+        histA_centers,
+        histA_contents,
+        left=np.nan,
+        right=np.nan,
+    )
+
+    histB_interp = np.interp(
+        xarr,
+        histB_centers,
+        histB_contents,
+        left=np.nan,
+        right=np.nan,
+    )
+
+    weights = np.zeros_like(xarr, dtype=float)
+
+    valid = (
+        valid
+        & np.isfinite(histA_interp)
+        & np.isfinite(histB_interp)
+            & (histA_interp >= 0.0)
+        & (histB_interp > histB_min)
+    )
+
+    weights[valid] = histA_interp[valid] / histB_interp[valid]
+
+    # Return a scalar when the input was scalar.
+    if np.ndim(xarr) == 0:
+        return float(weights)
+
+    return weights
+
+
