@@ -360,14 +360,14 @@ def hist_ratio_reweight(
     histB_min=0.0,
 ):
     """
-    Calculate histA(xs) / histB(xs) using linear interpolation.
+    Calculate histA(xs) / histB(xs) reweight using linear interpolation.
 
     Parameters
     ----------
     xs : scalar or array-like
         Histogram variables.
-    min_t2k_flux : float
-        Minimum allowed interpolated T2K flux. Energies below this
+    histB_min : float
+        Minimum allowed interpolated histB flux. Energies below this
         denominator threshold receive weight zero.
     """
     xarr = np.asarray(xs, dtype=float)
