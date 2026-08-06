@@ -888,12 +888,13 @@ def load_json_reweighter(
     return JSONReweighter.load(filepath)
 
 
-def prepare_2p2h_reweight_inputs(
+def reaction_frame_2p2h_momenta(
     nucleon1_px: ArrayLike, nucleon1_py: ArrayLike, nucleon1_pz: ArrayLike,
     nucleon2_px: ArrayLike, nucleon2_py: ArrayLike, nucleon2_pz: ArrayLike,
     lepton_px: ArrayLike, lepton_py: ArrayLike, lepton_pz: ArrayLike
 ) -> NDArray:
     """
+    Convert 2p2h final state momenta from lab frame to reaction plane frame.
     Prepare inputs for BDT reweight from SuSAv2 to Valencia exclusive 2p2h.
     Take lab frame arrays of px, py, pz of final state nucleon1, nucleon2,
     and lepton of length N.
